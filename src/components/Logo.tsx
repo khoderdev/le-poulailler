@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import logo from '../assets/le-poulailler-logo.png';
+import logo from '../assets/le-poulailler-logo.jpg';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
