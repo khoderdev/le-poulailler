@@ -1,42 +1,6 @@
-// import { motion } from 'framer-motion';
-// import type { MenuCategory } from '../types';
-
-// interface MenuTabsProps {
-//   categories: MenuCategory[];
-//   activeCategory: string;
-//   onCategoryChange: (categoryId: string) => void;
-// }
-
-// const MenuTabs = ({ categories, activeCategory, onCategoryChange }: MenuTabsProps) => {
-//   return (
-//     <nav className="w-full overflow-x-auto scrollbar-hide">
-//       <div className="flex justify-center gap-2 md:gap-4 px-4 py-3 min-w-max">
-//         {categories.map((category) => {
-//           const isActive = activeCategory === category.id;
-//           return (
-//             <motion.button
-//               key={category.id}
-//               onClick={() => onCategoryChange(category.id)}
-//               className={`relative px-5 py-2 md:px-8 md:py-2.5 text-sm md:text-base font-medium whitespace-nowrap transition-all duration-200 rounded-full border-2 ${
-//                 isActive
-//                   ? 'bg-cyan-500 text-white border-cyan-500 shadow-md'
-//                   : 'bg-white text-gray-600 border-gray-200 hover:border-cyan-300 hover:text-cyan-600'
-//               }`}
-//               whileHover={{ scale: 1.02 }}
-//               whileTap={{ scale: 0.98 }}
-//             >
-//               {category.name}
-//             </motion.button>
-//           );
-//         })}
-//       </div>
-//     </nav>
-//   );
-// };
-
-// export default MenuTabs;
-import { motion } from 'framer-motion';
-import type { MenuCategory } from '../types';
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState, useCallback } from "react";
+import type { MenuCategory } from "../types";
 
 interface MenuTabsProps {
   categories: MenuCategory[];
@@ -49,36 +13,211 @@ const MenuTabs = ({
   activeCategory,
   onCategoryChange,
 }: MenuTabsProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasDragged, setHasDragged] = useState(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+  const velocity = useRef(0);
+  const lastX = useRef(0);
+  const animationFrame = useRef<number | null>(null);
+
+  /* -------------------------------------------------
+     Auto scroll active tab into center
+  ------------------------------------------------- */
+  const scrollToActive = useCallback(() => {
+    const container = containerRef.current;
+    const activeTab = tabRefs.current[activeCategory];
+
+    if (!container || !activeTab) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+
+    const offset =
+      tabRect.left -
+      containerRect.left -
+      containerRect.width / 2 +
+      tabRect.width / 2;
+
+    container.scrollBy({
+      left: offset,
+      behavior: "smooth",
+    });
+  }, [activeCategory]);
+
+  useEffect(() => {
+    scrollToActive();
+  }, [scrollToActive]);
+
+  /* -------------------------------------------------
+     Momentum scrolling animation
+  ------------------------------------------------- */
+  const applyMomentum = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const friction = 0.95;
+    const minVelocity = 0.5;
+
+    const animate = () => {
+      velocity.current *= friction;
+
+      if (Math.abs(velocity.current) < minVelocity) {
+        if (animationFrame.current) {
+          cancelAnimationFrame(animationFrame.current);
+          animationFrame.current = null;
+        }
+        return;
+      }
+
+      container.scrollLeft -= velocity.current;
+      animationFrame.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+  }, []);
+
+  /* -------------------------------------------------
+     Mouse Drag Scrolling
+  ------------------------------------------------- */
+  const onMouseDown = (e: React.MouseEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+      animationFrame.current = null;
+    }
+
+    setIsDragging(true);
+    setHasDragged(false);
+    startX.current = e.pageX;
+    lastX.current = e.pageX;
+    scrollLeft.current = container.scrollLeft;
+    velocity.current = 0;
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    e.preventDefault();
+    const x = e.pageX;
+    const walk = x - startX.current;
+
+    if (Math.abs(walk) > 5) {
+      setHasDragged(true);
+    }
+
+    velocity.current = x - lastX.current;
+    lastX.current = x;
+
+    container.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const stopDragging = () => {
+    if (isDragging && Math.abs(velocity.current) > 1) {
+      applyMomentum();
+    }
+    setIsDragging(false);
+  };
+
+  /* -------------------------------------------------
+     Horizontal wheel scrolling
+  ------------------------------------------------- */
+  const onWheel = (e: React.WheelEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      return;
+    }
+
+    e.preventDefault();
+    container.scrollLeft += e.deltaY;
+  };
+
+  /* -------------------------------------------------
+     Handle tab click (prevent if dragged)
+  ------------------------------------------------- */
+  const handleTabClick = (categoryId: string) => {
+    if (hasDragged) return;
+    onCategoryChange(categoryId);
+  };
+
+  /* -------------------------------------------------
+     Cleanup animation frame on unmount
+  ------------------------------------------------- */
+  useEffect(() => {
+    return () => {
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
+      }
+    };
+  }, []);
+
   return (
-    <nav className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/70 border-b border-gray-100">
-      <div className="relative flex gap-3 px-4 md:px-8 py-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory">
+    <nav className="sticky top-[60px] md:top-[68px] z-30 w-full bg-white/90 backdrop-blur-md border-b border-gray-100">
+      {/* Fade Edges */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-white via-white/80 to-transparent z-10" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-white via-white/80 to-transparent z-10" />
+
+      <div
+        ref={containerRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseLeave={stopDragging}
+        onMouseUp={stopDragging}
+        onWheel={onWheel}
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className={`
+          relative flex gap-2 md:gap-3 px-6 md:px-10 py-3 md:py-4
+          overflow-x-auto
+          [&::-webkit-scrollbar]:hidden
+          select-none
+          ${isDragging ? "cursor-grabbing" : "cursor-grab"}
+        `}
+      >
         {categories.map((category) => {
           const isActive = activeCategory === category.id;
 
           return (
             <button
               key={category.id}
-              onClick={() => onCategoryChange(category.id)}
+              ref={(el) => {
+                tabRefs.current[category.id] = el;
+              }}
+              onClick={() => handleTabClick(category.id)}
               className={`
-                relative snap-start shrink-0 px-6 md:px-8 py-2.5 md:py-3
-                text-sm md:text-base font-semibold rounded-full
-                transition-all duration-200 focus:outline-none
-                ${
-                  isActive
-                    ? 'text-white'
-                    : 'text-gray-600 hover:text-cyan-600'
-                }
+                relative shrink-0 px-5 md:px-7 py-2 md:py-2.5
+                text-sm md:text-base font-medium
+                rounded-full transition-all duration-200
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2
+                ${isActive ? "text-white" : "text-gray-500 hover:text-gray-800"}
               `}
             >
               {isActive && (
                 <motion.span
                   layoutId="activeTab"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  className="absolute inset-0 bg-cyan-500 rounded-full shadow-lg"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 35,
+                  }}
+                  className="absolute inset-0 bg-linear-to-r from-cyan-500 to-cyan-600 rounded-full shadow-lg shadow-cyan-500/25"
                 />
               )}
 
-              <span className="relative z-10">{category.name}</span>
+              <span className="relative z-10 whitespace-nowrap">
+                {category.name}
+              </span>
             </button>
           );
         })}

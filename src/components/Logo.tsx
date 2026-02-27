@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from '../assets/le-poulailler-logo.png';
 
@@ -23,21 +24,25 @@ const Logo = ({ size = 'md', animate = true, className = '' }: LogoProps) => {
     />
   );
 
-  if (animate) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        whileHover={{ scale: 1.02 }}
-        className="inline-block"
-      >
-        {imgElement}
-      </motion.div>
-    );
-  }
+  const content = animate ? (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      whileHover={{ scale: 1.02 }}
+      className="inline-block"
+    >
+      {imgElement}
+    </motion.div>
+  ) : (
+    imgElement
+  );
 
-  return imgElement;
+  return (
+    <Link to="/" className="cursor-pointer">
+      {content}
+    </Link>
+  );
 };
 
 export default Logo;
