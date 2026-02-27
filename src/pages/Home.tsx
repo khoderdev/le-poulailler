@@ -95,7 +95,7 @@ const Home = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-center text-gray-500 text-sm md:text-base mb-10! tracking-wide"
           >
-            All OUR CHICKEN ARE ZERO HORMONES
+            ZERO HORMONES
           </motion.p>
 
           {/* Menu Cards */}

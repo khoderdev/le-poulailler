@@ -393,4 +393,5 @@ const menuSlice = createSlice({
 });
 
 export const { setActiveShopCategory, setActiveRestaurantCategory } = menuSlice.actions;
+export type { MenuState };
 export default menuSlice.reducer;
