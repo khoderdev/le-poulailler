@@ -45,7 +45,7 @@ const MenuItems = ({ items, categoryId }: MenuItemsProps) => {
               variants={itemVariants}
               className="group flex items-baseline justify-between py-2 border-b border-gray-100 hover:border-cyan-200 transition-colors"
             >
-              <h3 className="text-gray-700 text-sm md:text-base font-medium group-hover:text-gray-900 transition-colors pr-4">
+              <h3 className="text-gray-700 text-sm md:text-base font-bold group-hover:text-gray-900 transition-colors pr-4">
                 {item.name}
               </h3>
               <div className="flex items-center gap-1 text-cyan-600 font-semibold text-sm md:text-base whitespace-nowrap">
