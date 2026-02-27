@@ -63,9 +63,16 @@ const MenuItems = ({ items, categoryId, variant = "shop" }: MenuItemsProps) => {
               className={`group py-3 border-b border-gray-100 ${hoverBorder} transition-colors`}
             >
               <div className="flex items-baseline justify-between">
-                <h3 className="text-gray-700 text-sm md:text-base font-bold group-hover:text-gray-900 transition-colors pr-4">
-                  {item.name}
-                </h3>
+                <div className="flex items-center gap-2 pr-4">
+                  <h3 className="text-gray-700 text-sm md:text-base font-bold group-hover:text-gray-900 transition-colors">
+                    {item.name}
+                  </h3>
+                  {item.comingSoon && (
+                    <span className="px-2 py-0.5 text-[10px] md:text-xs font-semibold bg-amber-100 text-amber-700 rounded-full whitespace-nowrap">
+                      Coming Soon
+                    </span>
+                  )}
+                </div>
                 <div
                   className={`flex items-center gap-1 ${priceColor} font-semibold text-sm md:text-base whitespace-nowrap`}
                 >
