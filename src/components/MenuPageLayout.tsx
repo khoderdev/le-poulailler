@@ -18,22 +18,22 @@ const MenuPageLayout = ({
   onCategoryChange,
 }: MenuPageLayoutProps) => {
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
+    <div className="h-full flex flex-col bg-linear-to-b from-gray-50 to-white overflow-hidden">
       <MenuHeader />
+
+      <MenuTabs
+        categories={categories}
+        activeCategory={activeCategory}
+        onCategoryChange={onCategoryChange}
+      />
 
       <motion.main
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="max-w-7xl mx-auto"
+        className="flex-1 overflow-y-auto"
       >
-        <MenuTabs
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={onCategoryChange}
-        />
-
-        <section className="px-4 md:px-8 pt-8 pb-20">
+        <section className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-20">
           <MenuItems items={items} categoryId={activeCategory} />
         </section>
       </motion.main>

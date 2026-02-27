@@ -9,7 +9,7 @@ const MenuHeader = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl py-4 md:py-5 px-4 border-b border-gray-100/80"
+      className="shrink-0 z-20 bg-white/80 backdrop-blur-xl py-4 md:py-5 px-4 border-b border-gray-100/80"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <Link to="/">

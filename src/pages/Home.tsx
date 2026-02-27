@@ -43,7 +43,7 @@ const menuLinks = [
 
 const Home = () => {
   return (
-    <div className="relative min-h-screen flex flex-col bg-slate-50 overflow-hidden">
+    <div className="relative h-full flex flex-col bg-slate-50 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-linear-to-br from-cyan-100/40 to-amber-100/40 rounded-full blur-3xl" />

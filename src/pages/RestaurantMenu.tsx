@@ -25,21 +25,21 @@ const RestaurantMenu = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-full flex flex-col bg-white overflow-hidden">
       <MenuHeader />
+
+      <MenuTabs
+        categories={restaurantMenu}
+        activeCategory={activeRestaurantCategory}
+        onCategoryChange={handleCategoryChange}
+      />
 
       <motion.main
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className=""
+        className="flex-1 overflow-y-auto"
       >
-        <MenuTabs
-          categories={restaurantMenu}
-          activeCategory={activeRestaurantCategory}
-          onCategoryChange={handleCategoryChange}
-        />
-
         <div className="pt-6 pb-16">
           <MenuItems
             items={activeItems}
