@@ -1,18 +1,22 @@
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { setActiveRestaurantCategory } from '../store/menuSlice';
-import MenuHeader from '../components/MenuHeader';
-import MenuTabs from '../components/MenuTabs';
-import MenuItems from '../components/MenuItems';
-import type { MenuCategory } from '../types';
+import { useMemo } from "react";
+import { motion } from "framer-motion";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { setActiveRestaurantCategory } from "../store/menuSlice";
+import MenuHeader from "../components/MenuHeader";
+import MenuTabs from "../components/MenuTabs";
+import MenuItems from "../components/MenuItems";
+import type { MenuCategory } from "../types";
 
 const RestaurantMenu = () => {
   const dispatch = useAppDispatch();
-  const { restaurantMenu, activeRestaurantCategory } = useAppSelector((state) => state.menu);
+  const { restaurantMenu, activeRestaurantCategory } = useAppSelector(
+    (state) => state.menu,
+  );
 
   const activeItems = useMemo(() => {
-    const category = restaurantMenu.find((cat: MenuCategory) => cat.id === activeRestaurantCategory);
+    const category = restaurantMenu.find(
+      (cat: MenuCategory) => cat.id === activeRestaurantCategory,
+    );
     return category?.items ?? [];
   }, [restaurantMenu, activeRestaurantCategory]);
 
@@ -23,21 +27,24 @@ const RestaurantMenu = () => {
   return (
     <div className="min-h-screen bg-white">
       <MenuHeader />
-      
+
       <motion.main
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="py-6 md:py-8"
+        className=""
       >
         <MenuTabs
           categories={restaurantMenu}
           activeCategory={activeRestaurantCategory}
           onCategoryChange={handleCategoryChange}
         />
-        
+
         <div className="pt-6 pb-16">
-          <MenuItems items={activeItems} categoryId={activeRestaurantCategory} />
+          <MenuItems
+            items={activeItems}
+            categoryId={activeRestaurantCategory}
+          />
         </div>
       </motion.main>
     </div>
