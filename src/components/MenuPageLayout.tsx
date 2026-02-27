@@ -9,6 +9,7 @@ interface MenuPageLayoutProps {
   activeCategory: string;
   items: any[];
   onCategoryChange: (id: string) => void;
+  variant?: 'shop' | 'restaurant';
 }
 
 const MenuPageLayout = ({
@@ -16,6 +17,7 @@ const MenuPageLayout = ({
   activeCategory,
   items,
   onCategoryChange,
+  variant = 'shop',
 }: MenuPageLayoutProps) => {
   return (
     <div className="h-full flex flex-col bg-linear-to-b from-gray-50 to-white overflow-hidden">
@@ -25,6 +27,7 @@ const MenuPageLayout = ({
         categories={categories}
         activeCategory={activeCategory}
         onCategoryChange={onCategoryChange}
+        variant={variant}
       />
 
       <motion.main
@@ -34,7 +37,7 @@ const MenuPageLayout = ({
         className="flex-1 overflow-y-auto"
       >
         <section className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-20">
-          <MenuItems items={items} categoryId={activeCategory} />
+          <MenuItems items={items} categoryId={activeCategory} variant={variant} />
         </section>
       </motion.main>
     </div>

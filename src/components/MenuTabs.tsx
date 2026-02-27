@@ -6,13 +6,18 @@ interface MenuTabsProps {
   categories: MenuCategory[];
   activeCategory: string;
   onCategoryChange: (categoryId: string) => void;
+  variant?: 'shop' | 'restaurant';
 }
 
 const MenuTabs = ({
   categories,
   activeCategory,
   onCategoryChange,
+  variant = 'shop',
 }: MenuTabsProps) => {
+  const accentColor = variant === 'shop' ? 'bg-[#286091]' : 'bg-[#9c2622]';
+  const shadowColor = variant === 'shop' ? 'shadow-[#286091]/25' : 'shadow-[#9c2622]/25';
+  const focusRing = variant === 'shop' ? 'focus-visible:ring-[#286091]' : 'focus-visible:ring-[#9c2622]';
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -199,7 +204,7 @@ const MenuTabs = ({
                 relative shrink-0 px-5 md:px-7 py-2 md:py-2.5
                 text-sm md:text-base font-medium
                 rounded-full transition-all duration-200
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2
+                focus:outline-none focus-visible:ring-2 ${focusRing} focus-visible:ring-offset-2
                 ${isActive ? "text-white" : "text-gray-500 hover:text-gray-800"}
               `}
             >
@@ -211,7 +216,7 @@ const MenuTabs = ({
                     stiffness: 500,
                     damping: 35,
                   }}
-                  className="absolute inset-0 bg-linear-to-r from-cyan-500 to-cyan-600 rounded-full shadow-lg shadow-cyan-500/25"
+                  className={`absolute inset-0 ${accentColor} rounded-full shadow-lg ${shadowColor}`}
                 />
               )}
 

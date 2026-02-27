@@ -32,6 +32,7 @@ const RestaurantMenu = () => {
         categories={restaurantMenu}
         activeCategory={activeRestaurantCategory}
         onCategoryChange={handleCategoryChange}
+        variant="restaurant"
       />
 
       <motion.main
@@ -44,6 +45,7 @@ const RestaurantMenu = () => {
           <MenuItems
             items={activeItems}
             categoryId={activeRestaurantCategory}
+            variant="restaurant"
           />
         </div>
       </motion.main>

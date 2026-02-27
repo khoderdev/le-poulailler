@@ -28,16 +28,16 @@ const menuLinks = [
     title: "Shop Menu",
     subtitle: "",
     icon: HiOutlineShoppingBag,
-    gradient: "from-cyan-500 to-teal-500",
-    shadowColor: "shadow-cyan-500/25",
+    bgColor: "bg-[#286091]",
+    shadowColor: "shadow-[#286091]/25",
   },
   {
     to: "/restaurant-menu",
     title: "Restaurant Menu",
     subtitle: "",
     icon: HiOutlineClipboardList,
-    gradient: "from-amber-500 to-orange-500",
-    shadowColor: "shadow-amber-500/25",
+    bgColor: "bg-[#9c2622]",
+    shadowColor: "shadow-[#9c2622]/25",
   },
 ];
 
@@ -105,12 +105,12 @@ const Home = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex flex-col gap-4 select-none! p-8!"
           >
-            {menuLinks.map(({ to, title, subtitle, icon: Icon, gradient, shadowColor }) => (
+            {menuLinks.map(({ to, title, subtitle, icon: Icon, bgColor, shadowColor }) => (
               <Link
                 key={to}
                 to={to}
                 className={`group relative flex items-center gap-5 p-5 md:p-6 
-                           bg-linear-to-r ${gradient}
+                           ${bgColor}
                            rounded-2xl shadow-lg ${shadowColor}
                            hover:shadow-xl hover:-translate-y-0.5
                            active:translate-y-0 active:shadow-lg
