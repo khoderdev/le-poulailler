@@ -732,6 +732,7 @@ export const restaurantMenuData: MenuCategory[] = [
         price: 43,
         description:
           "Our special chicken shawarma served with garlic sauce, pickles & french fries",
+        comingSoon: true,
       },
     ],
   },
