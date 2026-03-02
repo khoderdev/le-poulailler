@@ -1,13 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import menuReducer, { type MenuState } from './menuSlice';
+import menuReducer from './menuSlice';
+import adminReducer from './adminSlice';
 
 export const store = configureStore({
   reducer: {
     menu: menuReducer,
+    admin: adminReducer,
   },
 });
 
-export interface RootState {
-  menu: MenuState;
-}
+export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

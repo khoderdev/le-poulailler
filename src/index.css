@@ -38,11 +38,13 @@ a {
   color: inherit;
 }
 
-button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
+@layer base {
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
 }
 
 button:focus,
