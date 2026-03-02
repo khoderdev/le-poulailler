@@ -133,7 +133,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -144,9 +144,9 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-4 sm:py-6 overflow-hidden flex flex-col">
         {/* Menu Type Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-4 sm:mb-6 shrink-0">
           <button
             onClick={() => {
               setActiveTab("shop");
@@ -172,10 +172,10 @@ const AdminDashboard = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 flex-1 min-h-0">
             {/* Categories Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+              <div className="bg-white rounded-xl shadow-sm p-4 h-full max-h-[40vh] lg:max-h-full overflow-y-auto">
                 <h2 className="font-semibold text-gray-800 mb-4">Categories</h2>
                 <div className="space-y-2">
                   {currentMenu.map(category => (
@@ -189,8 +189,8 @@ const AdminDashboard = () => {
             </div>
 
             {/* Items List */}
-            <div className="lg:col-span-3 max-h-[calc(100vh-450px)] md:max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div className="bg-white rounded-xl shadow-sm">
+            <div className="lg:col-span-3 min-h-0 flex flex-col">
+              <div className="bg-white rounded-xl shadow-sm flex-1 flex flex-col min-h-0 max-h-[50vh] sm:max-h-[60vh] lg:max-h-full overflow-hidden">
                 <div className="p-4 border-b flex items-center justify-between">
                   <h2 className="font-semibold text-gray-800">{currentCategory?.name || "Select a category"}</h2>
                   {currentCategory && (
@@ -206,7 +206,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                <div className="divide-y">
+                <div className="divide-y flex-1 overflow-y-auto">
                   {/* Add New Item Form */}
                   <AnimatePresence>
                     {isAddingNew && (
