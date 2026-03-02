@@ -6,18 +6,22 @@ interface MenuTabsProps {
   categories: MenuCategory[];
   activeCategory: string;
   onCategoryChange: (categoryId: string) => void;
-  variant?: 'shop' | 'restaurant';
+  variant?: "shop" | "restaurant";
 }
 
 const MenuTabs = ({
   categories,
   activeCategory,
   onCategoryChange,
-  variant = 'shop',
+  variant = "shop",
 }: MenuTabsProps) => {
-  const accentColor = variant === 'shop' ? 'bg-[#286091]' : 'bg-[#9c2622]';
-  const shadowColor = variant === 'shop' ? 'shadow-[#286091]/25' : 'shadow-[#9c2622]/25';
-  const focusRing = variant === 'shop' ? 'focus-visible:ring-[#286091]' : 'focus-visible:ring-[#9c2622]';
+  const accentColor = variant === "shop" ? "bg-[#286091]" : "bg-[#9c2622]";
+  const shadowColor =
+    variant === "shop" ? "shadow-[#286091]/25" : "shadow-[#9c2622]/25";
+  const focusRing =
+    variant === "shop"
+      ? "focus-visible:ring-[#286091]"
+      : "focus-visible:ring-[#9c2622]";
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -166,7 +170,7 @@ const MenuTabs = ({
   }, []);
 
   return (
-    <nav className="shrink-0 z-30 w-full bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <nav className="shrink-0 justify-center flex z-30 w-full bg-white/90 backdrop-blur-md border-b border-gray-100">
       {/* Fade Edges */}
       <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-linear-to-r from-white via-white/80 to-transparent z-10" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-linear-to-l from-white via-white/80 to-transparent z-10" />
