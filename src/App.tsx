@@ -9,7 +9,7 @@ function App() {
     <Router>
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Home />} />
           <Route path="/shop-menu" element={<ShopMenu />} />
           <Route path="/restaurant-menu" element={<RestaurantMenu />} />
         </Routes>
