@@ -8,7 +8,7 @@ interface AdminState {
 
 const initialState: AdminState = {
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: false
 };
 
 const adminSlice = createSlice({
@@ -16,25 +16,23 @@ const adminSlice = createSlice({
   initialState,
   reducers: {
     login: (state, action: PayloadAction<string>) => {
-      const adminPassword =
-        import.meta.env.VITE_ADMIN_PASSWORD || "1234";
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || "1234";
       if (action.payload === adminPassword) {
         state.isAuthenticated = true;
         sessionStorage.setItem("admin_authenticated", "true");
       }
     },
-    logout: (state) => {
+    logout: state => {
       state.isAuthenticated = false;
       sessionStorage.removeItem("admin_authenticated");
     },
-    checkSession: (state) => {
-      state.isAuthenticated =
-        sessionStorage.getItem("admin_authenticated") === "true";
+    checkSession: state => {
+      state.isAuthenticated = sessionStorage.getItem("admin_authenticated") === "true";
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
-    },
-  },
+    }
+  }
 });
 
 export const { login, logout, checkSession, setLoading } = adminSlice.actions;

@@ -9,14 +9,10 @@ import type { MenuCategory } from "../types";
 
 const RestaurantMenu = () => {
   const dispatch = useAppDispatch();
-  const { restaurantMenu, activeRestaurantCategory } = useAppSelector(
-    (state) => state.menu,
-  );
+  const { restaurantMenu, activeRestaurantCategory } = useAppSelector(state => state.menu);
 
   const activeItems = useMemo(() => {
-    const category = restaurantMenu.find(
-      (cat: MenuCategory) => cat.id === activeRestaurantCategory,
-    );
+    const category = restaurantMenu.find((cat: MenuCategory) => cat.id === activeRestaurantCategory);
     return category?.items ?? [];
   }, [restaurantMenu, activeRestaurantCategory]);
 
@@ -28,25 +24,11 @@ const RestaurantMenu = () => {
     <div className="h-full flex flex-col bg-white overflow-hidden">
       <MenuHeader />
 
-      <MenuTabs
-        categories={restaurantMenu}
-        activeCategory={activeRestaurantCategory}
-        onCategoryChange={handleCategoryChange}
-        variant="restaurant"
-      />
+      <MenuTabs categories={restaurantMenu} activeCategory={activeRestaurantCategory} onCategoryChange={handleCategoryChange} variant="restaurant" />
 
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="flex-1 overflow-y-auto"
-      >
+      <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="flex-1 overflow-y-auto">
         <div className="pt-6 pb-16">
-          <MenuItems
-            items={activeItems}
-            categoryId={activeRestaurantCategory}
-            variant="restaurant"
-          />
+          <MenuItems items={activeItems} categoryId={activeRestaurantCategory} variant="restaurant" />
         </div>
       </motion.main>
     </div>

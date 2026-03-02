@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiArrowLeft } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
 import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem } from "../store/menuSlice";
@@ -136,15 +137,21 @@ const AdminDashboard = () => {
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Menu Management</h1>
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between relative">
+          <Link to="/">
+            <motion.button whileHover={{ scale: 1.05, x: -2 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-200 group">
+              <FiArrowLeft className="text-lg md:text-xl transition-transform group-hover:-translate-x-0.5" />
+              <span className="text-sm font-medium hidden sm:inline">Back</span>
+            </motion.button>
+          </Link>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-bold text-gray-800">Menu Management</h1>
           <button onClick={handleLogout} className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
             Logout
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-4 sm:py-6 overflow-hidden flex flex-col">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-4 sm:py-6 overflow-hidden flex flex-col min-h-0">
         {/* Menu Type Tabs */}
         <div className="flex gap-2 mb-4 sm:mb-6 shrink-0">
           <button
@@ -172,10 +179,10 @@ const AdminDashboard = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 flex-1 min-h-0 lg:grid-rows-[1fr]">
             {/* Categories Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-4 h-full max-h-[40vh] lg:max-h-full overflow-y-auto">
+            <div className="lg:col-span-1 min-h-0 flex flex-col">
+              <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto">
                 <h2 className="font-semibold text-gray-800 mb-4">Categories</h2>
                 <div className="space-y-2">
                   {currentMenu.map(category => (
@@ -190,7 +197,7 @@ const AdminDashboard = () => {
 
             {/* Items List */}
             <div className="lg:col-span-3 min-h-0 flex flex-col">
-              <div className="bg-white rounded-xl shadow-sm flex-1 flex flex-col min-h-0 max-h-[50vh] sm:max-h-[60vh] lg:max-h-full overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm flex-1 flex flex-col min-h-0 max-h-[50vh] sm:max-h-[60vh] lg:max-h-none overflow-hidden">
                 <div className="p-4 border-b flex items-center justify-between">
                   <h2 className="font-semibold text-gray-800">{currentCategory?.name || "Select a category"}</h2>
                   {currentCategory && (

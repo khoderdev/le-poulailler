@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { MenuState, MenuCategory, MenuItem } from "../types";
-import { shopMenuData, restaurantMenuData } from "../types";
 import { supabase } from "../lib/supabase";
 import type { DbMenuCategory, DbMenuItem } from "../lib/supabase";
 
@@ -47,8 +46,8 @@ export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { 
     });
 
     return {
-      shopMenu: shopCategories.length > 0 ? shopCategories : null,
-      restaurantMenu: restaurantCategories.length > 0 ? restaurantCategories : null
+      shopMenu: shopCategories,
+      restaurantMenu: restaurantCategories
     };
   } catch (error) {
     console.error("Error fetching menu data:", error);
@@ -148,10 +147,10 @@ interface ExtendedMenuState extends MenuState {
 }
 
 const initialState: ExtendedMenuState = {
-  shopMenu: shopMenuData,
-  restaurantMenu: restaurantMenuData,
-  activeShopCategory: "fresh-chicken",
-  activeRestaurantCategory: "soup",
+  shopMenu: [],
+  restaurantMenu: [],
+  activeShopCategory: "",
+  activeRestaurantCategory: "",
   isLoading: false,
   error: null,
   isDataFromSupabase: false
@@ -257,27 +256,19 @@ const menuSlice = createSlice({
       })
       .addCase(fetchMenuData.fulfilled, (state, action) => {
         state.isLoading = false;
-        if (action.payload.shopMenu) {
-          state.shopMenu = action.payload.shopMenu;
+        state.isDataFromSupabase = true;
+        state.shopMenu = action.payload.shopMenu;
+        state.restaurantMenu = action.payload.restaurantMenu;
+        if (action.payload.shopMenu.length > 0) {
+          state.activeShopCategory = action.payload.shopMenu[0].id;
         }
-        if (action.payload.restaurantMenu) {
-          state.restaurantMenu = action.payload.restaurantMenu;
-        }
-        if (action.payload.shopMenu || action.payload.restaurantMenu) {
-          state.isDataFromSupabase = true;
-          // Set active categories to first available
-          if (action.payload.shopMenu && action.payload.shopMenu.length > 0) {
-            state.activeShopCategory = action.payload.shopMenu[0].id;
-          }
-          if (action.payload.restaurantMenu && action.payload.restaurantMenu.length > 0) {
-            state.activeRestaurantCategory = action.payload.restaurantMenu[0].id;
-          }
+        if (action.payload.restaurantMenu.length > 0) {
+          state.activeRestaurantCategory = action.payload.restaurantMenu[0].id;
         }
       })
       .addCase(fetchMenuData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-        // Keep using fallback data
       })
       // Update menu item
       .addCase(updateMenuItem.fulfilled, (state, action) => {
