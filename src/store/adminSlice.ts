@@ -17,7 +17,7 @@ const adminSlice = createSlice({
   reducers: {
     login: (state, action: PayloadAction<string>) => {
       const adminPassword =
-        import.meta.env.VITE_ADMIN_PASSWORD || "lepoulailler2024";
+        import.meta.env.VITE_ADMIN_PASSWORD || "1234";
       if (action.payload === adminPassword) {
         state.isAuthenticated = true;
         sessionStorage.setItem("admin_authenticated", "true");
