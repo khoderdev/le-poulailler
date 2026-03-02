@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Home from './pages/Home';
 import ShopMenu from './pages/ShopMenu';
@@ -9,6 +9,7 @@ function App() {
     <Router>
       <AnimatePresence mode="wait">
         <Routes>
+          <Route path="/" element={<Navigate to="/menu" replace />} />
           <Route path="/menu" element={<Home />} />
           <Route path="/shop-menu" element={<ShopMenu />} />
           <Route path="/restaurant-menu" element={<RestaurantMenu />} />
