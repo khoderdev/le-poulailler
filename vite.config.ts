@@ -13,14 +13,23 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("react-dom") || id.includes("react-router")) {
-              return "vendor";
+            if (id.includes("react-dom")) {
+              return "react-dom";
+            }
+            if (id.includes("react-router")) {
+              return "router";
             }
             if (id.includes("@reduxjs/toolkit") || id.includes("react-redux")) {
               return "redux";
             }
             if (id.includes("framer-motion")) {
               return "motion";
+            }
+            if (id.includes("react-icons")) {
+              return "icons";
+            }
+            if (id.includes("@supabase")) {
+              return "supabase";
             }
           }
         },
