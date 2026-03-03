@@ -6,6 +6,7 @@ import ShopMenu from "./pages/ShopMenu";
 import RestaurantMenu from "./pages/RestaurantMenu";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAppDispatch } from "./store/hooks";
 import { fetchMenuData } from "./store/menuSlice";
@@ -38,6 +39,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AnimatePresence>
     </Router>
