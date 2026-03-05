@@ -140,6 +140,40 @@ export const deleteMenuItem = createAsyncThunk("menu/deleteMenuItem", async (ite
   }
 });
 
+// Async thunk to add a menu category
+export const addMenuCategory = createAsyncThunk(
+  "menu/addMenuCategory",
+  async (
+    category: {
+      menu_type: "shop" | "restaurant";
+      name: string;
+    },
+    { rejectWithValue, getState }
+  ) => {
+    try {
+      const state = getState() as { menu: ExtendedMenuState };
+      const existingCategories = category.menu_type === "shop" ? state.menu.shopMenu : state.menu.restaurantMenu;
+      const maxSortOrder = existingCategories.reduce(max => Math.max(max, 0), 0);
+
+      const newCategory = {
+        id: `${category.menu_type}-${Date.now()}`,
+        menu_type: category.menu_type,
+        name: category.name,
+        sort_order: maxSortOrder + 1,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase.from("menu_categories").insert(newCategory).select().single();
+
+      if (error) throw error;
+      return data as DbMenuCategory;
+    } catch (error) {
+      console.error("Error adding menu category:", error);
+      return rejectWithValue("Failed to add menu category");
+    }
+  }
+);
+
 interface ExtendedMenuState extends MenuState {
   isLoading: boolean;
   error: string | null;
@@ -342,6 +376,20 @@ const menuSlice = createSlice({
             category.items.splice(idx, 1);
             return;
           }
+        }
+      })
+      // Add menu category
+      .addCase(addMenuCategory.fulfilled, (state, action) => {
+        const category = action.payload;
+        const newCategory: MenuCategory = {
+          id: category.id,
+          name: category.name,
+          items: []
+        };
+        if (category.menu_type === "shop") {
+          state.shopMenu.push(newCategory);
+        } else {
+          state.restaurantMenu.push(newCategory);
         }
       });
   }

@@ -42,7 +42,7 @@ const MenuItems = ({ items, categoryId, variant = "shop" }: MenuItemsProps) => {
         initial="hidden"
         animate="visible"
         exit="exit"
-        className="max-w-4xl mx-auto px-6 md:px-8"
+        className="max-w-4xl mx-auto px-6 md:px-8 touch-auto"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
           {items.map((item) => (

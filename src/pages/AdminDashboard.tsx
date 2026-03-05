@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
-import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem } from "../store/menuSlice";
+import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 
 interface EditingItem extends MenuItem {
@@ -20,8 +20,10 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<"shop" | "restaurant">("shop");
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // New item form state
   const [newItem, setNewItem] = useState({
@@ -127,6 +129,29 @@ const AdminDashboard = () => {
     [dispatch]
   );
 
+  const handleAddCategory = useCallback(async () => {
+    if (!newCategoryName.trim()) return;
+
+    setSaveStatus("saving");
+    try {
+      const result = await dispatch(
+        addMenuCategory({
+          menu_type: activeTab,
+          name: newCategoryName.trim()
+        })
+      ).unwrap();
+      setSaveStatus("saved");
+      setNewCategoryName("");
+      setSelectedCategory(result.id);
+      setTimeout(() => {
+        setIsAddingCategory(false);
+        setSaveStatus("idle");
+      }, 1000);
+    } catch {
+      setSaveStatus("error");
+    }
+  }, [dispatch, activeTab, newCategoryName]);
+
   const currentCategory = useMemo(() => currentMenu.find(cat => cat.id === selectedCategory), [currentMenu, selectedCategory]);
 
   if (!isAuthenticated) {
@@ -182,9 +207,59 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 flex-1 min-h-0 lg:grid-rows-[1fr]">
             {/* Categories Sidebar */}
             <div className="lg:col-span-1 min-h-0 flex flex-col">
-              <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto">
-                <h2 className="font-semibold text-gray-800 mb-4">Categories</h2>
-                <div className="space-y-2">
+              <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-gray-800">Categories</h2>
+                  <button
+                    onClick={() => setIsAddingCategory(!isAddingCategory)}
+                    className={`px-3 py-1.5 text-sm rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                {/* Add Category Form */}
+                <AnimatePresence>
+                  {isAddingCategory && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-4 p-3 bg-green-50 rounded-lg"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Category name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleAddCategory()}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddCategory}
+                          disabled={saveStatus === "saving" || !newCategoryName.trim()}
+                          className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                        >
+                          {saveStatus === "saving" ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsAddingCategory(false);
+                            setNewCategoryName("");
+                            setSaveStatus("idle");
+                          }}
+                          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="space-y-2 flex-1 overflow-y-auto">
                   {currentMenu.map(category => (
                     <button key={category.id} onClick={() => setSelectedCategory(category.id)} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}>
                       <span className="font-medium">{category.name}</span>
