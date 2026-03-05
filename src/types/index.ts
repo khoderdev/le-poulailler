@@ -592,13 +592,13 @@ export const restaurantMenuData: MenuCategory[] = [
       },
       {
         id: "bc-2",
-        name: "B-Chicken Meal 4pcs وجبة بروستد",
+        name: "B-Chicken Meal 5pcs وجبة بروستد",
         price: 49,
         description: "Served with potato & garlic sauce",
       },
       {
         id: "bc-3",
-        name: "B-Chicken Meal 8pcs وجبة بروستد",
+        name: "B-Chicken Meal 10pcs وجبة بروستد",
         price: 86,
         description: "Served with potato & garlic sauce",
       },
@@ -807,78 +807,104 @@ export const restaurantMenuData: MenuCategory[] = [
   },
   {
     id: "lebanese-sandwiches",
-    name: "Lebanese Sandwiches",
+    name: "Lebanese Sandwiches & Grilled Sandwiches",
     items: [
       {
         id: "ls-1",
         name: "Falafel فلافل",
         price: 19,
         description:
-          "Falafel with tomatoes, parsley, pickled turnip, cucumber pickles, and tahini wrapped in arabic bread",
+          "Falafel with tomatoes, parsley, pickled turnip, cucumber pickles, and tahini served in arabic bread",
       },
       {
         id: "ls-2",
         name: "Cauliflower قرنبيط مقلي",
         price: 19,
-        description: "Cauliflower sandwich with pickles and tahini sauce",
+        description:
+          "Cauliflower sandwich with pickles and tahini sauce served in arabic bread",
       },
       {
         id: "ls-3",
-        name: "Halloumi حلوم",
-        price: 22,
+        name: "French Fries Sandwich بطاطا مقليّه",
+        price: 19,
         description:
-          "Halloumi grilled with lettuce, tomatoes and fresh cucumber",
+          "French fries with ketchup, coleslaw and pickles served in arabic bread",
       },
       {
         id: "ls-4",
-        name: "Shish Taouk شيش طاووق",
-        price: 26,
-        description: "Taouk with garlic and pickles",
+        name: "Labneh لبنه",
+        price: 20,
+        description:
+          "Lebanese Labne with mint and virgin olive oil served in arabic bread",
       },
       {
         id: "ls-5",
-        name: "Lebanese Taouk طاووق لبناني",
-        price: 28,
+        name: "Labne with Vegetables لبنه و خضرة",
+        price: 22,
         description:
-          "Taouk with garlic, coleslaw salad, fries and cucumber pickles",
+          "Lebanese labne with mint leaves, tomatoes and fresh cucumber served in arabic bread",
       },
       {
         id: "ls-6",
-        name: "Chicken with Garlic سندوش الدجاج بالثوم",
-        price: 25,
+        name: "Halloumi حلوم",
+        price: 22,
         description:
-          "Roasted chicken with garlic, pickles, and fries served in Lebanese bread",
+          "Halloumi grilled with lettuce, tomatoes and fresh cucumber served in arabic bread",
       },
       {
         id: "ls-7",
+        name: "Shish Taouk شيش طاووق",
+        price: 26,
+        description: "Taouk with garlic and pickles served in arabic bread",
+      },
+      {
+        id: "ls-8",
+        name: "Lebanese Taouk طاووق لبناني",
+        price: 28,
+        description:
+          "Taouk with garlic coleslaw salad fries and cucumber pickles served in arabic bread",
+      },
+      {
+        id: "ls-9",
+        name: "Chicken with Garlic سندوش الدجاج بالثوم",
+        price: 25,
+        description:
+          "Roasted Chicken with garlic, pickles, and fries served in arabic bread",
+      },
+      {
+        id: "ls-10",
         name: "Chicken Liver سودة دجاج",
         price: 25,
         description:
           "Fried chicken liver with garlic paste and pickles served in soft french bread",
       },
       {
-        id: "ls-8",
-        name: "Makanek مقانق",
-        price: 24,
-        description: "Grilled chicken sausages, hommos, pickles, and tomatoes",
-      },
-      {
-        id: "ls-9",
-        name: "Soujouk سجق",
-        price: 24,
-        description: "Grilled spicy chicken sausages with hommos and pickles",
-      },
-      {
-        id: "ls-10",
-        name: "Kabab Halabi Chicken كباب حلبي",
-        price: 26,
-        description: "Kabab halabi chicken with hommos and pickles",
-      },
-      {
         id: "ls-11",
-        name: "Kabab Intabli Chicken كباب عنتبلي",
+        name: "Makanek Chicken مقانق دجاج",
+        price: 24,
+        description:
+          "Grilled chicken sausages, hommos, pickles, and tomatoes served in arabic bread",
+      },
+      {
+        id: "ls-12",
+        name: "Soujouk Chicken سجق دجاج",
+        price: 24,
+        description:
+          "Grilled spicy chicken sausages with hommos and pickles served in arabic bread",
+      },
+      {
+        id: "ls-13",
+        name: "Kabab Halabi Chicken كباب حلبي دجاج",
         price: 26,
-        description: "Spicy chicken kabab with hommos and pickles",
+        description:
+          "Kabab halabi chicken with hommos and pickles served in arabic bread",
+      },
+      {
+        id: "ls-14",
+        name: "Kabab Intabli Chicken كباب عنتبلي دجاج",
+        price: 26,
+        description:
+          "Spicy chicken kabab with hommos and pickles served in arabic bread",
       },
     ],
   },
@@ -888,31 +914,31 @@ export const restaurantMenuData: MenuCategory[] = [
     items: [
       {
         id: "gr-1",
-        name: "Shish Taouk Plate شيش طاووق",
+        name: "Shish Taouk Plate طبق شيش طاووق",
         price: 52,
         description:
           "Grilled marinated chicken cubes served with garlic paste, fries, and hommos",
       },
       {
         id: "gr-2",
-        name: "Kabab Halabi Plate كباب حلبي",
+        name: "Kabab Halabi Chicken Plate طبق كباب حلبي دجاج",
         price: 49,
         description:
           "Grilled chicken minced meat seasoned with parsley and onions served with fries and hommos",
       },
       {
         id: "gr-3",
-        name: "Kabab Intabli Plate كباب عنتبلي",
+        name: "Kabab Intabli Chicken Plate طبق كباب عنتبلي دجاج",
         price: 49,
         description:
           "Grilled spicy chicken minced meat seasoned with parsley and onions served with fries and hommos",
       },
       {
         id: "gr-4",
-        name: "Mix Grill مشاوي مشكّل لشخص",
+        name: "Chicken Mix Grill Plate طبق مشاوي دجاج مشكّل",
         price: 51,
         description:
-          "Shish taouk, kabab halabi, kabab intabli served with fries and hommos",
+          "Shish taouk, kabab halabi chicken, kabab intabli chicken served with fries and hommos",
       },
       {
         id: "gr-5",
@@ -929,89 +955,82 @@ export const restaurantMenuData: MenuCategory[] = [
       },
       {
         id: "gr-7",
-        name: "Soujouk سجق",
+        name: "Soujouk Chicken سجق دجاج",
         price: 32,
         description:
           "Grilled spicy chicken sausages served with grilled onions and tomatoes",
       },
       {
         id: "gr-8",
-        name: "Makanek مقانق",
+        name: "Makanek Chicken مقانق دجاج",
         price: 32,
         description:
           "Grilled chicken sausages served with grilled onions, tomatoes and pomegranate molasses",
       },
       {
         id: "gr-9",
-        name: "Arayes Chicken Plate عرايس دجاج",
-        price: 42,
-        description:
-          "Lebanese bread stuffed with our special Lebanese chicken mixture grilled to perfection (served with yogurt)",
-      },
-      {
-        id: "gr-10",
         name: "Half Chicken نصف فروج",
         price: 48,
         description:
           "Half grilled chicken served with pickles, fries, and hommos",
       },
       {
-        id: "gr-11",
+        id: "gr-10",
         name: "Full Chicken فروج",
         price: 78,
         description:
           "Full grilled chicken served with pickles, fries, and hommos",
       },
       {
-        id: "gr-12",
-        name: "Taouk Half KG شيش طاووق نصف كيلو",
+        id: "gr-11",
+        name: "Taouk Half KG شيش طاووق",
         price: 76,
         description: "Shish taouk served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-13",
-        name: "Kabab Intabli Chicken Half KG كباب عنتبلي نصف كيلو",
+        id: "gr-12",
+        name: "Kabab Intabli Chicken Half KG كباب عنتبلي دجاج",
         price: 72,
         description:
           "Kabab intabli chicken served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-14",
-        name: "Kabab Halabi Chicken Half KG كباب حلبي نصف كيلو",
+        id: "gr-13",
+        name: "Kabab Halabi Chicken Half KG كباب حلبي دجاج",
         price: 72,
         description:
           "Kabab halabi chicken served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-15",
-        name: "Chicken Mix Grilled Half KG مشاوي مشكّل نصف كيلو",
+        id: "gr-14",
+        name: "Chicken Mix Grilled Half KG مشاوي دجاج مشكّل",
         price: 75,
         description:
           "Shish taouk, kabab halabi chicken, kabab intabli chicken, makanek chicken, and soujouk chicken served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-16",
-        name: "Taouk 1 KG شيش طاووق كيلو",
+        id: "gr-15",
+        name: "Taouk 1 KG شيش طاووق",
         price: 151,
         description: "Shish taouk served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-17",
-        name: "Kabab Intabli Chicken 1 KG كباب عنتبلي كيلو",
+        id: "gr-16",
+        name: "Kabab Intabli Chicken 1 KG كباب عنتبلي دجاج",
         price: 141,
         description:
           "Kabab intabli chicken served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-18",
-        name: "Kabab Halabi Chicken 1 KG كباب حلبي كيلو",
+        id: "gr-17",
+        name: "Kabab Halabi Chicken 1 KG كباب حلبي دجاج",
         price: 141,
         description:
           "Kabab halabi chicken served with fries, hummus & garlic sauce",
       },
       {
-        id: "gr-19",
-        name: "Chicken Mix Grilled 1 KG مشاوي مشكّل كيلو",
+        id: "gr-18",
+        name: "Chicken Mix Grilled 1 KG مشاوي دجاج مشكّل",
         price: 149,
         description:
           "Shish taouk, kabab halabi chicken, kabab intabli chicken, makanek chicken, and soujouk chicken served with fries, hummus & garlic sauce",
@@ -1057,7 +1076,7 @@ export const restaurantMenuData: MenuCategory[] = [
       { id: "te-1", name: "Matte متة", price: 31 },
       { id: "te-2", name: "Black Tea شاي", price: 13 },
       { id: "te-3", name: "Green Tea شاي اخضر", price: 13 },
-      { id: "te-4", name: "Earl-Gray Tea شاي ايرل جراي", price: 13 },
+      { id: "te-4", name: "Earl-Gray Tea شاي اخضر", price: 13 },
       { id: "te-5", name: "Moroccan Tea for One شاي مغربي لشخص", price: 16 },
       { id: "te-6", name: "Moroccan Tea for Two شاي مغربي لشخصين", price: 24 },
       {
