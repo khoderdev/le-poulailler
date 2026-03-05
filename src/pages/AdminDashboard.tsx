@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector(state => state.admin);
-  const { shopMenu, restaurantMenu, isLoading } = useAppSelector(state => state.menu);
+  const { shopMenu, restaurantMenu, isLoading } = useAppSelector((state) => state.menu);
 
   const [activeTab, setActiveTab] = useState<"shop" | "restaurant">("shop");
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
