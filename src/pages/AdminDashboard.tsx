@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
-import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory } from "../store/menuSlice";
+import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, deleteMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 
 interface EditingItem extends MenuItem {
@@ -152,6 +152,34 @@ const AdminDashboard = () => {
     }
   }, [dispatch, activeTab, newCategoryName]);
 
+  const handleDeleteCategory = useCallback(
+    async (categoryId: string, categoryName: string) => {
+      if (!confirm(`Are you sure you want to delete "${categoryName}"? This will also delete all items in this category.`)) return;
+
+      try {
+        await dispatch(
+          deleteMenuCategory({
+            categoryId,
+            menuType: activeTab
+          })
+        ).unwrap();
+        // Select first category after deletion
+        if (selectedCategory === categoryId && currentMenu.length > 1) {
+          const remainingCategories = currentMenu.filter(cat => cat.id !== categoryId);
+          if (remainingCategories.length > 0) {
+            setSelectedCategory(remainingCategories[0].id);
+          } else {
+            setSelectedCategory("");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to delete category:", error);
+        alert("Failed to delete category. Please try again.");
+      }
+    },
+    [dispatch, activeTab, selectedCategory, currentMenu]
+  );
+
   const currentCategory = useMemo(() => currentMenu.find(cat => cat.id === selectedCategory), [currentMenu, selectedCategory]);
 
   if (!isAuthenticated) {
@@ -261,10 +289,25 @@ const AdminDashboard = () => {
 
                 <div className="space-y-2 flex-1 overflow-y-auto">
                   {currentMenu.map(category => (
-                    <button key={category.id} onClick={() => setSelectedCategory(category.id)} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}>
-                      <span className="font-medium">{category.name}</span>
-                      <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
-                    </button>
+                    <div key={category.id} className="relative group">
+                      <button
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}
+                      >
+                        <span className="font-medium">{category.name}</span>
+                        <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCategory(category.id, category.name);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
+                        title="Delete category"
+                      >
+                        ×
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

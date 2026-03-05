@@ -174,6 +174,28 @@ export const addMenuCategory = createAsyncThunk(
   }
 );
 
+// Async thunk to delete a menu category
+export const deleteMenuCategory = createAsyncThunk(
+  "menu/deleteMenuCategory",
+  async (
+    payload: {
+      categoryId: string;
+      menuType: "shop" | "restaurant";
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { error } = await supabase.from("menu_categories").delete().eq("id", payload.categoryId);
+
+      if (error) throw error;
+      return payload;
+    } catch (error) {
+      console.error("Error deleting menu category:", error);
+      return rejectWithValue("Failed to delete menu category");
+    }
+  }
+);
+
 interface ExtendedMenuState extends MenuState {
   isLoading: boolean;
   error: string | null;
@@ -390,6 +412,15 @@ const menuSlice = createSlice({
           state.shopMenu.push(newCategory);
         } else {
           state.restaurantMenu.push(newCategory);
+        }
+      })
+      // Delete menu category
+      .addCase(deleteMenuCategory.fulfilled, (state, action) => {
+        const { categoryId, menuType } = action.payload;
+        if (menuType === "shop") {
+          state.shopMenu = state.shopMenu.filter(cat => cat.id !== categoryId);
+        } else {
+          state.restaurantMenu = state.restaurantMenu.filter(cat => cat.id !== categoryId);
         }
       });
   }
