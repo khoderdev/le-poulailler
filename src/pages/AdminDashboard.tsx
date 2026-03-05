@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
-import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, deleteMenuCategory } from "../store/menuSlice";
+import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 
 interface EditingItem extends MenuItem {
@@ -21,6 +21,8 @@ const AdminDashboard = () => {
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -151,6 +153,35 @@ const AdminDashboard = () => {
       setSaveStatus("error");
     }
   }, [dispatch, activeTab, newCategoryName]);
+
+  const handleEditCategory = useCallback((categoryId: string, categoryName: string) => {
+    setEditingCategoryId(categoryId);
+    setEditingCategoryName(categoryName);
+  }, []);
+
+  const handleSaveCategoryEdit = useCallback(async () => {
+    if (!editingCategoryId || !editingCategoryName.trim()) return;
+
+    try {
+      await dispatch(
+        updateMenuCategory({
+          categoryId: editingCategoryId,
+          name: editingCategoryName.trim(),
+          menuType: activeTab
+        })
+      ).unwrap();
+      setEditingCategoryId(null);
+      setEditingCategoryName("");
+    } catch (error) {
+      console.error("Failed to update category:", error);
+      alert("Failed to update category. Please try again.");
+    }
+  }, [dispatch, editingCategoryId, editingCategoryName, activeTab]);
+
+  const handleCancelCategoryEdit = useCallback(() => {
+    setEditingCategoryId(null);
+    setEditingCategoryName("");
+  }, []);
 
   const handleDeleteCategory = useCallback(
     async (categoryId: string, categoryName: string) => {
@@ -290,23 +321,67 @@ const AdminDashboard = () => {
                 <div className="space-y-2 flex-1 overflow-y-auto">
                   {currentMenu.map(category => (
                     <div key={category.id} className="relative group">
-                      <button
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}
-                      >
-                        <span className="font-medium">{category.name}</span>
-                        <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCategory(category.id, category.name);
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
-                        title="Delete category"
-                      >
-                        ×
-                      </button>
+                      {editingCategoryId === category.id ? (
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <input
+                            type="text"
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") handleSaveCategoryEdit();
+                              if (e.key === "Escape") handleCancelCategoryEdit();
+                            }}
+                            className="w-full px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none mb-2"
+                            autoFocus
+                          />
+                          <div className="flex gap-1">
+                            <button
+                              onClick={handleSaveCategoryEdit}
+                              className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelCategoryEdit}
+                              className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setSelectedCategory(category.id)}
+                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}
+                          >
+                            <span className="font-medium">{category.name}</span>
+                            <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
+                          </button>
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditCategory(category.id, category.name);
+                              }}
+                              className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
+                              title="Edit category"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCategory(category.id, category.name);
+                              }}
+                              className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
+                              title="Delete category"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
