@@ -1,7 +1,7 @@
 -- =============================================
 -- Le Poulailler Menu Update Migration
 -- Run this SQL in your Supabase SQL Editor
--- This will update all restaurant menu items to match the new data
+-- This will update all restaurant AND shop menu items to match the new data
 -- =============================================
 
 -- First, delete all existing restaurant menu items and categories
@@ -330,3 +330,62 @@ INSERT INTO menu_items (id, category_id, name, price, description, coming_soon, 
 ('ds-3', 'dessert', 'Kunafa كنافة', '29', 'Baked semolina pastry with cheese', TRUE, 3),
 ('ds-4', 'dessert', 'Ghazal Al Banat غزل البنات بالايس كريم', '29', 'Mastic (Mistika) ice cream and Lebanese cotton candy. And a sprinkling of pistachios for good measure', TRUE, 4),
 ('ds-5', 'dessert', 'Baklawa Mix بقلاوة مشكلة', '29', 'Assorted baklawa', FALSE, 5);
+
+-- =============================================
+-- INSERT UPDATED DATA - SHOP MENU
+-- =============================================
+
+-- First, delete all existing shop menu items and categories
+DELETE FROM menu_items WHERE category_id IN (
+  SELECT id FROM menu_categories WHERE menu_type = 'shop'
+);
+DELETE FROM menu_categories WHERE menu_type = 'shop';
+
+-- Fresh Chicken Category
+INSERT INTO menu_categories (id, menu_type, name, sort_order) VALUES
+('fresh-chicken', 'shop', 'Fresh Chicken', 1);
+
+INSERT INTO menu_items (id, category_id, name, price, description, coming_soon, sort_order) VALUES
+('fc-1', 'fresh-chicken', 'Whole Chicken /kg', '23', NULL, FALSE, 1),
+('fc-2', 'fresh-chicken', 'Chicken Breast Bone-In/kg', '49', NULL, FALSE, 2),
+('fc-3', 'fresh-chicken', 'Chicken Leg Bone-In/kg', '32', NULL, FALSE, 3),
+('fc-4', 'fresh-chicken', 'Chicken ThighBone-In/kg', '30', NULL, FALSE, 4),
+('fc-5', 'fresh-chicken', 'Drum Sticks Bone-In/kg', '33', NULL, FALSE, 5),
+('fc-6', 'fresh-chicken', 'Chicken Wings Bone-In/kg', '24', NULL, FALSE, 6),
+('fc-7', 'fresh-chicken', 'Chicken Breast Boneless /kg', '56', NULL, FALSE, 7),
+('fc-8', 'fresh-chicken', 'Chicken Legs Boneless/kg', '52', NULL, FALSE, 8),
+('fc-9', 'fresh-chicken', 'Whole Chicken Boneless /kg', '52', NULL, FALSE, 9),
+('fc-10', 'fresh-chicken', 'Chicken Liver/kg', '25', NULL, FALSE, 10),
+('fc-11', 'fresh-chicken', 'Chicken Gizzard', '25', NULL, FALSE, 11),
+('fc-12', 'fresh-chicken', 'Chicken Heart', '25', NULL, FALSE, 12),
+('fc-13', 'fresh-chicken', 'Minced Chicken', '55', NULL, FALSE, 13);
+
+-- Chilled Items Category
+INSERT INTO menu_categories (id, menu_type, name, sort_order) VALUES
+('chilled-items', 'shop', 'Chilled Items', 2);
+
+INSERT INTO menu_items (id, category_id, name, price, description, coming_soon, sort_order) VALUES
+('ci-1', 'chilled-items', 'Chicken Fajita /kg', '56', NULL, FALSE, 1),
+('ci-2', 'chilled-items', 'Chicken Francisco /kg', '56', NULL, FALSE, 2),
+('ci-3', 'chilled-items', 'Shish Taouk /Kg (White Or Red)', '56', NULL, FALSE, 3),
+('ci-4', 'chilled-items', 'Chicken Breast Marinated /Kg', '56', NULL, FALSE, 4),
+('ci-5', 'chilled-items', 'Wings /kg (BBQ/BUFFALO/PROVENCIA)', '30', NULL, FALSE, 5),
+('ci-6', 'chilled-items', 'Chicken Kebab /Kg', '59', NULL, FALSE, 6),
+('ci-7', 'chilled-items', 'Whole Chicken Marinated /Piece', '36', NULL, FALSE, 7),
+('ci-8', 'chilled-items', 'Arayes Chicken /Kg', '51', NULL, FALSE, 8);
+
+-- Frozen Items Category
+INSERT INTO menu_categories (id, menu_type, name, sort_order) VALUES
+('frozen-items', 'shop', 'Frozen Items', 3);
+
+INSERT INTO menu_items (id, category_id, name, price, description, coming_soon, sort_order) VALUES
+('fi-1', 'frozen-items', 'Chicken Kiev /kg', '78', NULL, FALSE, 1),
+('fi-2', 'frozen-items', 'Chicken Crispy Fillet /kg', '64', NULL, FALSE, 2),
+('fi-3', 'frozen-items', 'Chicken Cordon Bleu /kg', '95', NULL, FALSE, 3),
+('fi-4', 'frozen-items', 'Chicken Escalope /kg', '64', NULL, FALSE, 4),
+('fi-5', 'frozen-items', 'Chicken Burger /kg', '52', NULL, FALSE, 5),
+('fi-6', 'frozen-items', 'Chicken Makanek /kg', '52', NULL, FALSE, 6),
+('fi-7', 'frozen-items', 'Chicken Sojouk /kg', '52', NULL, FALSE, 7),
+('fi-8', 'frozen-items', 'Cheese Rolls /pcs', '4', NULL, FALSE, 8),
+('fi-9', 'frozen-items', 'Kebbeh Chicken /pcs', '4', NULL, FALSE, 9),
+('fi-10', 'frozen-items', 'Spinash Fatayer', '4', NULL, FALSE, 10);
