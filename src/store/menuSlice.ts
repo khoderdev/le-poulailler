@@ -174,6 +174,34 @@ export const addMenuCategory = createAsyncThunk(
   }
 );
 
+// Async thunk to update a menu category
+export const updateMenuCategory = createAsyncThunk(
+  "menu/updateMenuCategory",
+  async (
+    payload: {
+      categoryId: string;
+      name: string;
+      menuType: "shop" | "restaurant";
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from("menu_categories")
+        .update({ name: payload.name, updated_at: new Date().toISOString() })
+        .eq("id", payload.categoryId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { ...payload, data: data as DbMenuCategory };
+    } catch (error) {
+      console.error("Error updating menu category:", error);
+      return rejectWithValue("Failed to update menu category");
+    }
+  }
+);
+
 // Async thunk to delete a menu category
 export const deleteMenuCategory = createAsyncThunk(
   "menu/deleteMenuCategory",
@@ -412,6 +440,15 @@ const menuSlice = createSlice({
           state.shopMenu.push(newCategory);
         } else {
           state.restaurantMenu.push(newCategory);
+        }
+      })
+      // Update menu category
+      .addCase(updateMenuCategory.fulfilled, (state, action) => {
+        const { categoryId, name, menuType } = action.payload;
+        const menu = menuType === "shop" ? state.shopMenu : state.restaurantMenu;
+        const category = menu.find(cat => cat.id === categoryId);
+        if (category) {
+          category.name = name;
         }
       })
       // Delete menu category
