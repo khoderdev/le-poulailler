@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   name TEXT NOT NULL,
   price TEXT NOT NULL,
   description TEXT,
+  image_url TEXT,
   coming_soon BOOLEAN DEFAULT FALSE,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -54,6 +55,26 @@ CREATE POLICY "Allow all operations on menu_items"
   ON menu_items FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- =============================================
+-- STORAGE BUCKET SETUP FOR MENU ITEM IMAGES
+-- =============================================
+
+-- Create storage bucket for menu item images
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('menu-items', 'menu-items', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public read access to menu item images
+CREATE POLICY "Public read access for menu item images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'menu-items');
+
+-- Allow all operations on menu item images (admin auth handled at app level)
+CREATE POLICY "Allow all operations on menu item images"
+  ON storage.objects FOR ALL
+  USING (bucket_id = 'menu-items')
+  WITH CHECK (bucket_id = 'menu-items');
 
 -- =============================================
 -- INSERT INITIAL DATA - SHOP MENU

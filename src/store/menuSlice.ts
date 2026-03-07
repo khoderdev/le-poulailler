@@ -29,6 +29,7 @@ export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { 
           name: item.name,
           price: item.price,
           description: item.description || undefined,
+          imageUrl: item.image_url || undefined,
           comingSoon: item.coming_soon
         }));
 
@@ -68,6 +69,7 @@ export const updateMenuItem = createAsyncThunk(
         name: string;
         price: number | string;
         description: string | null;
+        image_url: string | null;
         coming_soon: boolean;
       }>;
     },
@@ -99,6 +101,7 @@ export const addMenuItem = createAsyncThunk(
       name: string;
       price: number | string;
       description?: string;
+      image_url?: string;
       coming_soon?: boolean;
     },
     { rejectWithValue }
@@ -111,6 +114,7 @@ export const addMenuItem = createAsyncThunk(
         name: item.name,
         price: item.price,
         description: item.description || null,
+        image_url: item.image_url || null,
         coming_soon: item.coming_soon || false,
         sort_order: 0,
         created_at: new Date().toISOString()
@@ -186,12 +190,7 @@ export const updateMenuCategory = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const { data, error } = await supabase
-        .from("menu_categories")
-        .update({ name: payload.name, updated_at: new Date().toISOString() })
-        .eq("id", payload.categoryId)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("menu_categories").update({ name: payload.name, updated_at: new Date().toISOString() }).eq("id", payload.categoryId).select().single();
 
       if (error) throw error;
       return { ...payload, data: data as DbMenuCategory };
@@ -261,6 +260,7 @@ const menuSlice = createSlice({
         name: item.name,
         price: item.price,
         description: item.description || undefined,
+        imageUrl: item.image_url || undefined,
         comingSoon: item.coming_soon
       };
       // Find category and add item at the beginning (top)
@@ -293,6 +293,7 @@ const menuSlice = createSlice({
             name: item.name,
             price: item.price,
             description: item.description || undefined,
+            imageUrl: item.image_url || undefined,
             comingSoon: item.coming_soon
           };
           return;
@@ -307,6 +308,7 @@ const menuSlice = createSlice({
             name: item.name,
             price: item.price,
             description: item.description || undefined,
+            imageUrl: item.image_url || undefined,
             comingSoon: item.coming_soon
           };
           return;
@@ -366,6 +368,7 @@ const menuSlice = createSlice({
               name: item.name,
               price: item.price,
               description: item.description || undefined,
+              imageUrl: item.image_url || undefined,
               comingSoon: item.coming_soon
             };
             return;
@@ -380,6 +383,7 @@ const menuSlice = createSlice({
               name: item.name,
               price: item.price,
               description: item.description || undefined,
+              imageUrl: item.image_url || undefined,
               comingSoon: item.coming_soon
             };
             return;
@@ -394,6 +398,7 @@ const menuSlice = createSlice({
           name: item.name,
           price: item.price,
           description: item.description || undefined,
+          imageUrl: item.image_url || undefined,
           comingSoon: item.coming_soon
         };
         // Find category and add item at the beginning (top)

@@ -3,6 +3,7 @@ export interface MenuItem {
   name: string;
   price: number | string;
   description?: string;
+  imageUrl?: string;
   comingSoon?: boolean;
 }
 

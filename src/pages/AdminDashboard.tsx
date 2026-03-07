@@ -6,6 +6,8 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
 import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
+import ImageUpload from "../components/ImageUpload";
+import { uploadMenuItemImage, deleteMenuItemImage } from "../lib/imageUpload";
 
 interface EditingItem extends MenuItem {
   category_id: string;
@@ -15,7 +17,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector(state => state.admin);
-  const { shopMenu, restaurantMenu, isLoading } = useAppSelector((state) => state.menu);
+  const { shopMenu, restaurantMenu, isLoading } = useAppSelector(state => state.menu);
 
   const [activeTab, setActiveTab] = useState<"shop" | "restaurant">("shop");
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
@@ -34,6 +36,9 @@ const AdminDashboard = () => {
     description: "",
     coming_soon: false
   });
+  const [newItemImage, setNewItemImage] = useState<File | null>(null);
+  const [editItemImage, setEditItemImage] = useState<File | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     dispatch(checkSession());
@@ -64,6 +69,7 @@ const AdminDashboard = () => {
 
   const handleEditItem = useCallback((item: MenuItem, categoryId: string) => {
     setEditingItem({ ...item, category_id: categoryId });
+    setOriginalImageUrl(item.imageUrl);
     setIsAddingNew(false);
   }, []);
 
@@ -72,6 +78,30 @@ const AdminDashboard = () => {
 
     setSaveStatus("saving");
     try {
+      let imageUrl = editingItem.imageUrl;
+
+      // Upload new image if selected
+      if (editItemImage) {
+        const uploadResult = await uploadMenuItemImage(editItemImage, editingItem.id);
+        imageUrl = uploadResult.url;
+
+        // Delete old image if it exists
+        if (originalImageUrl) {
+          try {
+            await deleteMenuItemImage(originalImageUrl);
+          } catch (error) {
+            console.warn("Failed to delete old image:", error);
+          }
+        }
+      } else if (!editingItem.imageUrl && originalImageUrl) {
+        // Image was removed - delete from storage
+        try {
+          await deleteMenuItemImage(originalImageUrl);
+        } catch (error) {
+          console.warn("Failed to delete removed image:", error);
+        }
+      }
+
       await dispatch(
         updateMenuItem({
           itemId: editingItem.id,
@@ -79,44 +109,59 @@ const AdminDashboard = () => {
             name: editingItem.name,
             price: editingItem.price,
             description: editingItem.description || null,
+            image_url: imageUrl || null,
             coming_soon: editingItem.comingSoon || false
           }
         })
       ).unwrap();
       setSaveStatus("saved");
+      setEditItemImage(null);
       setTimeout(() => {
         setEditingItem(null);
         setSaveStatus("idle");
       }, 1000);
-    } catch {
+    } catch (error) {
+      console.error("Failed to save item:", error);
       setSaveStatus("error");
     }
-  }, [dispatch, editingItem]);
+  }, [dispatch, editingItem, editItemImage, originalImageUrl]);
 
   const handleAddItem = useCallback(async () => {
     if (!selectedCategory || !newItem.name) return;
 
     setSaveStatus("saving");
     try {
+      const tempId = `item-${Date.now()}`;
+      let imageUrl: string | undefined;
+
+      // Upload image if selected
+      if (newItemImage) {
+        const uploadResult = await uploadMenuItemImage(newItemImage, tempId);
+        imageUrl = uploadResult.url;
+      }
+
       await dispatch(
         addMenuItem({
           category_id: selectedCategory,
           name: newItem.name,
           price: newItem.price ? parseFloat(newItem.price) || newItem.price : 0,
           description: newItem.description || undefined,
+          image_url: imageUrl,
           coming_soon: newItem.coming_soon
         })
       ).unwrap();
       setSaveStatus("saved");
       setNewItem({ name: "", price: "", description: "", coming_soon: false });
+      setNewItemImage(null);
       setTimeout(() => {
         setIsAddingNew(false);
         setSaveStatus("idle");
       }, 1000);
-    } catch {
+    } catch (error) {
+      console.error("Failed to add item:", error);
       setSaveStatus("error");
     }
-  }, [dispatch, selectedCategory, newItem]);
+  }, [dispatch, selectedCategory, newItem, newItemImage]);
 
   const handleDeleteItem = useCallback(
     async (itemId: string) => {
@@ -269,10 +314,7 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-gray-800">Categories</h2>
-                  <button
-                    onClick={() => setIsAddingCategory(!isAddingCategory)}
-                    className={`px-3 py-1.5 text-sm rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}
-                  >
+                  <button onClick={() => setIsAddingCategory(!isAddingCategory)} className={`px-3 py-1.5 text-sm rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}>
                     + Add
                   </button>
                 </div>
@@ -280,27 +322,10 @@ const AdminDashboard = () => {
                 {/* Add Category Form */}
                 <AnimatePresence>
                   {isAddingCategory && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mb-4 p-3 bg-green-50 rounded-lg"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Category name"
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && handleAddCategory()}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2"
-                        autoFocus
-                      />
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 p-3 bg-green-50 rounded-lg">
+                      <input type="text" placeholder="Category name" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyPress={e => e.key === "Enter" && handleAddCategory()} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2" autoFocus />
                       <div className="flex gap-2">
-                        <button
-                          onClick={handleAddCategory}
-                          disabled={saveStatus === "saving" || !newCategoryName.trim()}
-                          className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
-                        >
+                        <button onClick={handleAddCategory} disabled={saveStatus === "saving" || !newCategoryName.trim()} className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
                           {saveStatus === "saving" ? "Saving..." : "Save"}
                         </button>
                         <button
@@ -326,8 +351,8 @@ const AdminDashboard = () => {
                           <input
                             type="text"
                             value={editingCategoryName}
-                            onChange={(e) => setEditingCategoryName(e.target.value)}
-                            onKeyPress={(e) => {
+                            onChange={e => setEditingCategoryName(e.target.value)}
+                            onKeyPress={e => {
                               if (e.key === "Enter") handleSaveCategoryEdit();
                               if (e.key === "Escape") handleCancelCategoryEdit();
                             }}
@@ -335,32 +360,23 @@ const AdminDashboard = () => {
                             autoFocus
                           />
                           <div className="flex gap-1">
-                            <button
-                              onClick={handleSaveCategoryEdit}
-                              className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                            >
+                            <button onClick={handleSaveCategoryEdit} className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
                               Save
                             </button>
-                            <button
-                              onClick={handleCancelCategoryEdit}
-                              className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
-                            >
+                            <button onClick={handleCancelCategoryEdit} className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">
                               Cancel
                             </button>
                           </div>
                         </div>
                       ) : (
                         <>
-                          <button
-                            onClick={() => setSelectedCategory(category.id)}
-                            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}
-                          >
+                          <button onClick={() => setSelectedCategory(category.id)} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}>
                             <span className="font-medium">{category.name}</span>
                             <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
                           </button>
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 handleEditCategory(category.id, category.name);
                               }}
@@ -370,7 +386,7 @@ const AdminDashboard = () => {
                               ✎
                             </button>
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 handleDeleteCategory(category.id, category.name);
                               }}
@@ -427,6 +443,10 @@ const AdminDashboard = () => {
                             className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none md:col-span-2"
                             rows={2}
                           />
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Image (Optional)</label>
+                            <ImageUpload onImageChange={setNewItemImage} disabled={saveStatus === "saving"} />
+                          </div>
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -502,6 +522,18 @@ const AdminDashboard = () => {
                                 rows={2}
                               />
                             </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-600 mb-2">Item Image</label>
+                              <ImageUpload 
+                                currentImageUrl={editingItem.imageUrl} 
+                                onImageChange={setEditItemImage} 
+                                onImageRemove={() => {
+                                  setEditingItem({ ...editingItem, imageUrl: undefined });
+                                  setEditItemImage(null);
+                                }}
+                                disabled={saveStatus === "saving"} 
+                              />
+                            </div>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
                                 type="checkbox"
@@ -533,7 +565,12 @@ const AdminDashboard = () => {
                           </div>
                         </motion.div>
                       ) : (
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          {item.imageUrl && (
+                            <div className="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          )}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium text-gray-800">{item.name}</h3>
@@ -542,7 +579,7 @@ const AdminDashboard = () => {
                             {item.description && <p className="text-gray-500 text-sm mt-1">{item.description}</p>}
                             <p className={`font-semibold mt-1 ${activeTab === "shop" ? "text-[#286091]" : "text-[#9c2622]"}`}>{item.price} AED</p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 shrink-0">
                             <button onClick={() => handleEditItem(item, selectedCategory)} className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
                               Edit
                             </button>
