@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
-import { fetchMenuData, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
+import { fetchMenuData, fetchMenus, addMenu, deleteMenu, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 import ImageUpload from "../components/ImageUpload";
 import { uploadMenuItemImage, deleteMenuItemImage } from "../lib/imageUpload";
@@ -17,17 +17,20 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector(state => state.admin);
-  const { shopMenu, restaurantMenu, isLoading } = useAppSelector(state => state.menu);
+  const { shopMenu, restaurantMenu, menus, isLoading } = useAppSelector(state => state.menu);
 
-  const [activeTab, setActiveTab] = useState<"shop" | "restaurant">("shop");
+  const [activeTab, setActiveTab] = useState<string>("shop");
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isAddingMenu, setIsAddingMenu] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newMenuName, setNewMenuName] = useState("");
+  const [newMenuColor, setNewMenuColor] = useState("#286091");
 
   // New item form state
   const [newItem, setNewItem] = useState({
@@ -52,9 +55,18 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     dispatch(fetchMenuData());
+    dispatch(fetchMenus());
   }, [dispatch]);
 
-  const currentMenu = useMemo(() => (activeTab === "shop" ? shopMenu : restaurantMenu), [activeTab, shopMenu, restaurantMenu]);
+  const currentMenu = useMemo(() => {
+    // For legacy shop/restaurant menus
+    if (activeTab === "shop") return shopMenu;
+    if (activeTab === "restaurant") return restaurantMenu;
+    
+    // For dynamic custom menus
+    const customMenu = menus.find(m => m.id === activeTab);
+    return customMenu?.categories || [];
+  }, [activeTab, shopMenu, restaurantMenu, menus]);
 
   useEffect(() => {
     if (currentMenu.length > 0 && !selectedCategory) {
@@ -116,6 +128,10 @@ const AdminDashboard = () => {
       ).unwrap();
       setSaveStatus("saved");
       setEditItemImage(null);
+      // Refresh menus if editing item in a custom menu
+      if (activeTab !== "shop" && activeTab !== "restaurant") {
+        dispatch(fetchMenus());
+      }
       setTimeout(() => {
         setEditingItem(null);
         setSaveStatus("idle");
@@ -153,6 +169,10 @@ const AdminDashboard = () => {
       setSaveStatus("saved");
       setNewItem({ name: "", price: "", description: "", coming_soon: false });
       setNewItemImage(null);
+      // Refresh menus if adding item to a custom menu
+      if (activeTab !== "shop" && activeTab !== "restaurant") {
+        dispatch(fetchMenus());
+      }
       setTimeout(() => {
         setIsAddingNew(false);
         setSaveStatus("idle");
@@ -183,13 +203,16 @@ const AdminDashboard = () => {
     try {
       const result = await dispatch(
         addMenuCategory({
-          menu_type: activeTab,
+          menu_type: activeTab === "shop" || activeTab === "restaurant" ? activeTab : undefined,
+          menu_id: activeTab, // Works for both legacy and dynamic menus
           name: newCategoryName.trim()
         })
       ).unwrap();
       setSaveStatus("saved");
       setNewCategoryName("");
       setSelectedCategory(result.id);
+      // Refresh menus to show the new category
+      dispatch(fetchMenus());
       setTimeout(() => {
         setIsAddingCategory(false);
         setSaveStatus("idle");
@@ -212,11 +235,13 @@ const AdminDashboard = () => {
         updateMenuCategory({
           categoryId: editingCategoryId,
           name: editingCategoryName.trim(),
-          menuType: activeTab
+          menuType: (activeTab === "shop" || activeTab === "restaurant" ? activeTab : "shop") as "shop" | "restaurant"
         })
       ).unwrap();
       setEditingCategoryId(null);
       setEditingCategoryName("");
+      // Refresh menus to show the updated category
+      dispatch(fetchMenus());
     } catch (error) {
       console.error("Failed to update category:", error);
       alert("Failed to update category. Please try again.");
@@ -228,6 +253,56 @@ const AdminDashboard = () => {
     setEditingCategoryName("");
   }, []);
 
+  const handleAddMenu = useCallback(async () => {
+    if (!newMenuName.trim()) return;
+
+    setSaveStatus("saving");
+    try {
+      await dispatch(
+        addMenu({
+          name: newMenuName.trim(),
+          color: newMenuColor
+        })
+      ).unwrap();
+      setSaveStatus("saved");
+      setNewMenuName("");
+      setNewMenuColor("#286091");
+      // Refresh menus to show the new one
+      dispatch(fetchMenus());
+      setTimeout(() => {
+        setIsAddingMenu(false);
+        setSaveStatus("idle");
+      }, 1000);
+    } catch {
+      setSaveStatus("error");
+    }
+  }, [dispatch, newMenuName, newMenuColor]);
+
+  const handleDeleteMenu = useCallback(async (menuId: string, menuName: string) => {
+    // Prevent deletion of default menus
+    if (menuId === "shop" || menuId === "restaurant") {
+      alert("Cannot delete default Shop or Restaurant menus.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${menuName}"? This will permanently delete all categories and items in this menu.`)) {
+      return;
+    }
+
+    try {
+      await dispatch(deleteMenu(menuId)).unwrap();
+      // Refresh menus after deletion
+      dispatch(fetchMenus());
+      // Switch to shop menu if the deleted menu was active
+      if (activeTab !== "shop" && activeTab !== "restaurant") {
+        setActiveTab("shop");
+      }
+    } catch (error) {
+      console.error("Failed to delete menu:", error);
+      alert("Failed to delete menu. Please try again.");
+    }
+  }, [dispatch, activeTab]);
+
   const handleDeleteCategory = useCallback(
     async (categoryId: string, categoryName: string) => {
       if (!confirm(`Are you sure you want to delete "${categoryName}"? This will also delete all items in this category.`)) return;
@@ -236,9 +311,11 @@ const AdminDashboard = () => {
         await dispatch(
           deleteMenuCategory({
             categoryId,
-            menuType: activeTab
+            menuType: (activeTab === "shop" || activeTab === "restaurant" ? activeTab : "shop") as "shop" | "restaurant"
           })
         ).unwrap();
+        // Refresh menus to show the deletion
+        dispatch(fetchMenus());
         // Select first category after deletion
         if (selectedCategory === categoryId && currentMenu.length > 1) {
           const remainingCategories = currentMenu.filter(cat => cat.id !== categoryId);
@@ -282,7 +359,8 @@ const AdminDashboard = () => {
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-4 sm:py-6 overflow-hidden flex flex-col min-h-0">
         {/* Menu Type Tabs */}
-        <div className="flex gap-2 mb-4 sm:mb-6 shrink-0">
+        <div className="flex gap-2 mb-4 sm:mb-6 shrink-0 flex-wrap">
+          {/* Shop Menu - Default */}
           <button
             onClick={() => {
               setActiveTab("shop");
@@ -292,6 +370,8 @@ const AdminDashboard = () => {
           >
             Shop Menu
           </button>
+
+          {/* Restaurant Menu - Default */}
           <button
             onClick={() => {
               setActiveTab("restaurant");
@@ -301,7 +381,82 @@ const AdminDashboard = () => {
           >
             Restaurant Menu
           </button>
+
+          {/* Dynamic Custom Menus */}
+          {menus?.filter((m) => m.id !== "shop" && m.id !== "restaurant").map((menu) => (
+            <div key={menu.id} className="relative group">
+              <button
+                onClick={() => {
+                  setActiveTab(menu.id as any);
+                  setSelectedCategory("");
+                }}
+                style={{ backgroundColor: activeTab === menu.id ? menu.color : undefined }}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  activeTab === menu.id ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {menu.name}
+              </button>
+              {/* Delete button - only shows on hover */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteMenu(menu.id, menu.name);
+                }}
+                className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
+                title="Delete Menu"
+              >
+                <FiTrash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+
+          {/* Add New Menu Button */}
+          <button onClick={() => setIsAddingMenu(true)} className="px-4 py-3 rounded-lg font-semibold transition-colors bg-white text-gray-600 hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center gap-2" title="Add New Menu">
+            <FiPlus className="w-5 h-5" />
+            <span className="hidden sm:inline">New Menu</span>
+          </button>
         </div>
+
+        {/* Add Menu Modal */}
+        <AnimatePresence>
+          {isAddingMenu && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setIsAddingMenu(false)}>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Menu</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Menu Name</label>
+                    <input type="text" placeholder="e.g., Lent Menu" value={newMenuName} onChange={e => setNewMenuName(e.target.value)} onKeyPress={e => e.key === "Enter" && handleAddMenu()} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" autoFocus />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Menu Color</label>
+                    <div className="flex gap-2 items-center">
+                      <input type="color" value={newMenuColor} onChange={e => setNewMenuColor(e.target.value)} className="w-12 h-10 rounded cursor-pointer" />
+                      <input type="text" value={newMenuColor} onChange={e => setNewMenuColor(e.target.value)} className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm" placeholder="#286091" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={handleAddMenu} disabled={saveStatus === "saving" || !newMenuName.trim()} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
+                      {saveStatus === "saving" ? "Creating..." : saveStatus === "saved" ? "Created!" : "Create Menu"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAddingMenu(false);
+                        setNewMenuName("");
+                        setNewMenuColor("#286091");
+                        setSaveStatus("idle");
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
@@ -343,7 +498,7 @@ const AdminDashboard = () => {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2 flex-1 overflow-y-auto">
+                <div className="space-y-2 flex-1 overflow-y-auto p-1">
                   {currentMenu.map(category => (
                     <div key={category.id} className="relative group">
                       {editingCategoryId === category.id ? (
@@ -524,14 +679,14 @@ const AdminDashboard = () => {
                             </div>
                             <div className="md:col-span-2">
                               <label className="block text-sm font-medium text-gray-600 mb-2">Item Image</label>
-                              <ImageUpload 
-                                currentImageUrl={editingItem.imageUrl} 
-                                onImageChange={setEditItemImage} 
+                              <ImageUpload
+                                currentImageUrl={editingItem.imageUrl}
+                                onImageChange={setEditItemImage}
                                 onImageRemove={() => {
                                   setEditingItem({ ...editingItem, imageUrl: undefined });
                                   setEditItemImage(null);
                                 }}
-                                disabled={saveStatus === "saving"} 
+                                disabled={saveStatus === "saving"}
                               />
                             </div>
                             <label className="flex items-center gap-2 cursor-pointer">

@@ -19,9 +19,21 @@ export interface DbMenuItem {
   updated_at?: string;
 }
 
+export interface DbMenu {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface DbMenuCategory {
   id: string;
-  menu_type: "shop" | "restaurant";
+  menu_id: string;
+  menu_type?: "shop" | "restaurant"; // Kept for backward compatibility
   name: string;
   sort_order: number;
   created_at?: string;

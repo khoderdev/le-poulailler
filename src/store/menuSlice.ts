@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { MenuState, MenuCategory, MenuItem } from "../types";
+import type { MenuState, MenuCategory, MenuItem, Menu } from "../types";
 import { supabase } from "../lib/supabase";
-import type { DbMenuCategory, DbMenuItem } from "../lib/supabase";
+import type { DbMenuCategory, DbMenuItem, DbMenu } from "../lib/supabase";
 
 // Async thunk to fetch menu data from Supabase
 export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { rejectWithValue }) => {
@@ -149,19 +149,26 @@ export const addMenuCategory = createAsyncThunk(
   "menu/addMenuCategory",
   async (
     category: {
-      menu_type: "shop" | "restaurant";
+      menu_type?: "shop" | "restaurant"; // Legacy support
+      menu_id?: string; // New dynamic menu support
       name: string;
     },
     { rejectWithValue, getState }
   ) => {
     try {
       const state = getState() as { menu: ExtendedMenuState };
+      
+      // Determine menu_id (support both legacy and new system)
+      const menuId = category.menu_id || category.menu_type || "shop";
+      
+      // Get existing categories for sort order
       const existingCategories = category.menu_type === "shop" ? state.menu.shopMenu : state.menu.restaurantMenu;
-      const maxSortOrder = existingCategories.reduce(max => Math.max(max, 0), 0);
+      const maxSortOrder = existingCategories.reduce((max) => Math.max(max, 0), 0);
 
       const newCategory = {
-        id: `${category.menu_type}-${Date.now()}`,
-        menu_type: category.menu_type,
+        id: `${menuId}-${Date.now()}`,
+        menu_id: menuId,
+        menu_type: category.menu_type, // Keep for backward compatibility
         name: category.name,
         sort_order: maxSortOrder + 1,
         created_at: new Date().toISOString()
@@ -201,6 +208,146 @@ export const updateMenuCategory = createAsyncThunk(
   }
 );
 
+// =============================================
+// Menu CRUD Operations
+// =============================================
+
+// Fetch all menus
+export const fetchMenus = createAsyncThunk("menu/fetchMenus", async (_, { rejectWithValue }) => {
+  try {
+    const { data: menus, error: menuError } = await supabase.from("menus").select("*").eq("is_active", true).order("sort_order", { ascending: true });
+
+    if (menuError) throw menuError;
+
+    const { data: categories, error: catError } = await supabase.from("menu_categories").select("*").order("sort_order", { ascending: true });
+
+    if (catError) throw catError;
+
+    const { data: items, error: itemError } = await supabase.from("menu_items").select("*").order("created_at", { ascending: false });
+
+    if (itemError) throw itemError;
+
+    const menusWithCategories: Menu[] = (menus as DbMenu[])?.map(menu => {
+      const menuCategories: MenuCategory[] = (categories as DbMenuCategory[])
+        ?.filter(cat => cat.menu_id === menu.id)
+        .map(cat => {
+          const categoryItems: MenuItem[] = (items as DbMenuItem[])
+            ?.filter(item => item.category_id === cat.id)
+            .map(item => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              description: item.description || undefined,
+              imageUrl: item.image_url || undefined,
+              comingSoon: item.coming_soon
+            }));
+
+          return {
+            id: cat.id,
+            name: cat.name,
+            items: categoryItems
+          };
+        });
+
+      return {
+        id: menu.id,
+        name: menu.name,
+        slug: menu.slug,
+        color: menu.color,
+        sortOrder: menu.sort_order,
+        isActive: menu.is_active,
+        categories: menuCategories
+      };
+    });
+
+    return menusWithCategories;
+  } catch (error) {
+    console.error("Error fetching menus:", error);
+    return rejectWithValue("Failed to fetch menus");
+  }
+});
+
+// Add a new menu
+export const addMenu = createAsyncThunk(
+  "menu/addMenu",
+  async (
+    menu: {
+      name: string;
+      color?: string;
+    },
+    { rejectWithValue, getState }
+  ) => {
+    try {
+      const state = getState() as { menu: ExtendedMenuState };
+      const maxSortOrder = state.menu.menus.reduce((max, m) => Math.max(max, m.sortOrder), 0);
+      const slug = menu.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+      const newMenu = {
+        id: `menu-${Date.now()}`,
+        name: menu.name,
+        slug,
+        color: menu.color || "#286091",
+        sort_order: maxSortOrder + 1,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase.from("menus").insert(newMenu).select().single();
+
+      if (error) throw error;
+      return data as DbMenu;
+    } catch (error) {
+      console.error("Error adding menu:", error);
+      return rejectWithValue("Failed to add menu");
+    }
+  }
+);
+
+// Update a menu
+export const updateMenu = createAsyncThunk(
+  "menu/updateMenu",
+  async (
+    payload: {
+      menuId: string;
+      name?: string;
+      color?: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const updates: Partial<DbMenu> = {
+        updated_at: new Date().toISOString()
+      };
+      if (payload.name) updates.name = payload.name;
+      if (payload.color) updates.color = payload.color;
+
+      const { data, error } = await supabase.from("menus").update(updates).eq("id", payload.menuId).select().single();
+
+      if (error) throw error;
+      return data as DbMenu;
+    } catch (error) {
+      console.error("Error updating menu:", error);
+      return rejectWithValue("Failed to update menu");
+    }
+  }
+);
+
+// Delete a menu
+export const deleteMenu = createAsyncThunk(
+  "menu/deleteMenu",
+  async (menuId: string, { rejectWithValue }) => {
+    try {
+      const { error } = await supabase.from("menus").delete().eq("id", menuId);
+
+      if (error) throw error;
+      return menuId;
+    } catch (error) {
+      console.error("Error deleting menu:", error);
+      return rejectWithValue("Failed to delete menu");
+    }
+  }
+);
+
 // Async thunk to delete a menu category
 export const deleteMenuCategory = createAsyncThunk(
   "menu/deleteMenuCategory",
@@ -230,6 +377,9 @@ interface ExtendedMenuState extends MenuState {
 }
 
 const initialState: ExtendedMenuState = {
+  menus: [],
+  activeMenuId: "",
+  activeCategoryByMenu: {},
   shopMenu: [],
   restaurantMenu: [],
   activeShopCategory: "",
@@ -463,6 +613,56 @@ const menuSlice = createSlice({
           state.shopMenu = state.shopMenu.filter(cat => cat.id !== categoryId);
         } else {
           state.restaurantMenu = state.restaurantMenu.filter(cat => cat.id !== categoryId);
+        }
+      })
+      // Fetch menus
+      .addCase(fetchMenus.pending, state => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMenus.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.menus = action.payload;
+        if (action.payload.length > 0) {
+          state.activeMenuId = action.payload[0].id;
+          // Set active category for each menu
+          action.payload.forEach(menu => {
+            if (menu.categories.length > 0) {
+              state.activeCategoryByMenu[menu.id] = menu.categories[0].id;
+            }
+          });
+        }
+      })
+      .addCase(fetchMenus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Add menu
+      .addCase(addMenu.fulfilled, (state, action) => {
+        const newMenu: Menu = {
+          id: action.payload.id,
+          name: action.payload.name,
+          slug: action.payload.slug,
+          color: action.payload.color,
+          sortOrder: action.payload.sort_order,
+          isActive: action.payload.is_active,
+          categories: []
+        };
+        state.menus.push(newMenu);
+      })
+      // Update menu
+      .addCase(updateMenu.fulfilled, (state, action) => {
+        const menu = state.menus.find(m => m.id === action.payload.id);
+        if (menu) {
+          menu.name = action.payload.name;
+          menu.color = action.payload.color;
+        }
+      })
+      // Delete menu
+      .addCase(deleteMenu.fulfilled, (state, action) => {
+        state.menus = state.menus.filter(m => m.id !== action.payload);
+        if (state.activeMenuId === action.payload && state.menus.length > 0) {
+          state.activeMenuId = state.menus[0].id;
         }
       });
   }

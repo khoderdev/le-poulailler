@@ -5,11 +5,12 @@ import Home from "./pages/Home";
 
 const ShopMenu = lazy(() => import("./pages/ShopMenu"));
 const RestaurantMenu = lazy(() => import("./pages/RestaurantMenu"));
+const DynamicMenu = lazy(() => import("./pages/DynamicMenu"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 import { useAppDispatch } from "./store/hooks";
-import { fetchMenuData } from "./store/menuSlice";
+import { fetchMenuData, fetchMenus } from "./store/menuSlice";
 import { useRealtimeMenu } from "./hooks/useRealtimeMenu";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
 
   useEffect(() => {
     dispatch(fetchMenuData());
+    dispatch(fetchMenus());
   }, [dispatch]);
 
   return (
@@ -42,6 +44,8 @@ function App() {
                 </Suspense>
               }
             />
+            {/* Dynamic route for custom menus */}
+            <Route path="/:menuSlug" element={<DynamicMenu />} />
           </Routes>
         </AnimatePresence>
       </Suspense>

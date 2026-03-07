@@ -13,11 +13,26 @@ export interface MenuCategory {
   items: MenuItem[];
 }
 
+export interface Menu {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  sortOrder: number;
+  isActive: boolean;
+  categories: MenuCategory[];
+}
+
 export interface MenuState {
+  menus: Menu[];
+  activeMenuId: string;
+  activeCategoryByMenu: Record<string, string>;
+  // Legacy support
   shopMenu: MenuCategory[];
   restaurantMenu: MenuCategory[];
   activeShopCategory: string;
   activeRestaurantCategory: string;
+  isLoading: boolean;
 }
 
 export const shopMenuData: MenuCategory[] = [
