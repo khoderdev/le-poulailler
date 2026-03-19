@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
@@ -31,6 +31,26 @@ const AdminDashboard = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newMenuName, setNewMenuName] = useState("");
   const [newMenuColor, setNewMenuColor] = useState("#286091");
+  const menuModalRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard Escape support for modals + scroll lock
+  useEffect(() => {
+    if (!isAddingMenu) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsAddingMenu(false);
+        setNewMenuName("");
+        setNewMenuColor("#286091");
+        setSaveStatus("idle");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isAddingMenu]);
 
   // New item form state
   const [newItem, setNewItem] = useState({
@@ -421,13 +441,13 @@ const AdminDashboard = () => {
         {/* Add Menu Modal */}
         <AnimatePresence>
           {isAddingMenu && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setIsAddingMenu(false)}>
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setIsAddingMenu(false)} role="dialog" aria-modal="true" aria-label="Create new menu">
+              <motion.div ref={menuModalRef} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Menu</h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Menu Name</label>
-                    <input type="text" placeholder="e.g., Lent Menu" value={newMenuName} onChange={e => setNewMenuName(e.target.value)} onKeyPress={e => e.key === "Enter" && handleAddMenu()} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" autoFocus />
+                    <input type="text" placeholder="e.g., Lent Menu" value={newMenuName} onChange={e => setNewMenuName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddMenu()} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" autoFocus />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Menu Color</label>
@@ -478,7 +498,7 @@ const AdminDashboard = () => {
                 <AnimatePresence>
                   {isAddingCategory && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 p-3 bg-green-50 rounded-lg">
-                      <input type="text" placeholder="Category name" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyPress={e => e.key === "Enter" && handleAddCategory()} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2" autoFocus />
+                      <input type="text" placeholder="Category name" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddCategory()} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2" autoFocus />
                       <div className="flex gap-2">
                         <button onClick={handleAddCategory} disabled={saveStatus === "saving" || !newCategoryName.trim()} className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
                           {saveStatus === "saving" ? "Saving..." : "Save"}
@@ -507,7 +527,7 @@ const AdminDashboard = () => {
                             type="text"
                             value={editingCategoryName}
                             onChange={e => setEditingCategoryName(e.target.value)}
-                            onKeyPress={e => {
+                            onKeyDown={e => {
                               if (e.key === "Enter") handleSaveCategoryEdit();
                               if (e.key === "Escape") handleCancelCategoryEdit();
                             }}

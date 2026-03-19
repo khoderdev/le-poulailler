@@ -1,42 +1,50 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createSelector } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { MenuState, MenuCategory, MenuItem, Menu } from "../types";
 import { supabase } from "../lib/supabase";
 import type { DbMenuCategory, DbMenuItem, DbMenu } from "../lib/supabase";
 
+// Helper: transform DbMenuItem to MenuItem (eliminates ~8 duplications)
+const toMenuItem = (item: DbMenuItem): MenuItem => ({
+  id: item.id,
+  name: item.name,
+  price: item.price,
+  description: item.description || undefined,
+  imageUrl: item.image_url || undefined,
+  comingSoon: item.coming_soon
+});
+
 // Async thunk to fetch menu data from Supabase
 export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { rejectWithValue }) => {
   try {
-    // Fetch categories
-    const { data: categories, error: catError } = await supabase.from("menu_categories").select("*").order("sort_order", { ascending: true });
+    // Parallel fetch — categories and items at the same time
+    const [catResult, itemResult] = await Promise.all([
+      supabase.from("menu_categories").select("*").order("sort_order", { ascending: true }),
+      supabase.from("menu_items").select("*").order("created_at", { ascending: false })
+    ]);
 
-    if (catError) throw catError;
+    if (catResult.error) throw catResult.error;
+    if (itemResult.error) throw itemResult.error;
 
-    // Fetch items - sort by created_at descending so newest items appear first
-    const { data: items, error: itemError } = await supabase.from("menu_items").select("*").order("created_at", { ascending: false });
+    const categories = catResult.data as DbMenuCategory[];
+    const items = itemResult.data as DbMenuItem[];
 
-    if (itemError) throw itemError;
+    // Build a lookup map for O(1) category→items grouping
+    const itemsByCategory = new Map<string, MenuItem[]>();
+    for (const item of items) {
+      const arr = itemsByCategory.get(item.category_id) || [];
+      arr.push(toMenuItem(item));
+      itemsByCategory.set(item.category_id, arr);
+    }
 
-    // Transform data to match existing structure
     const shopCategories: MenuCategory[] = [];
     const restaurantCategories: MenuCategory[] = [];
 
-    (categories as DbMenuCategory[])?.forEach(cat => {
-      const categoryItems: MenuItem[] = (items as DbMenuItem[])
-        ?.filter(item => item.category_id === cat.id)
-        .map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          description: item.description || undefined,
-          imageUrl: item.image_url || undefined,
-          comingSoon: item.coming_soon
-        }));
-
+    for (const cat of categories) {
       const menuCategory: MenuCategory = {
         id: cat.id,
         name: cat.name,
-        items: categoryItems
+        items: itemsByCategory.get(cat.id) || []
       };
 
       if (cat.menu_type === "shop") {
@@ -44,7 +52,7 @@ export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { 
       } else {
         restaurantCategories.push(menuCategory);
       }
-    });
+    }
 
     return {
       shopMenu: shopCategories,
@@ -215,50 +223,50 @@ export const updateMenuCategory = createAsyncThunk(
 // Fetch all menus
 export const fetchMenus = createAsyncThunk("menu/fetchMenus", async (_, { rejectWithValue }) => {
   try {
-    const { data: menus, error: menuError } = await supabase.from("menus").select("*").eq("is_active", true).order("sort_order", { ascending: true });
+    // Parallel fetch — all three queries at once
+    const [menuResult, catResult, itemResult] = await Promise.all([
+      supabase.from("menus").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+      supabase.from("menu_categories").select("*").order("sort_order", { ascending: true }),
+      supabase.from("menu_items").select("*").order("created_at", { ascending: false })
+    ]);
 
-    if (menuError) throw menuError;
+    if (menuResult.error) throw menuResult.error;
+    if (catResult.error) throw catResult.error;
+    if (itemResult.error) throw itemResult.error;
 
-    const { data: categories, error: catError } = await supabase.from("menu_categories").select("*").order("sort_order", { ascending: true });
+    const menus = menuResult.data as DbMenu[];
+    const categories = catResult.data as DbMenuCategory[];
+    const items = itemResult.data as DbMenuItem[];
 
-    if (catError) throw catError;
+    // Build lookup maps for O(1) grouping
+    const itemsByCategory = new Map<string, MenuItem[]>();
+    for (const item of items) {
+      const arr = itemsByCategory.get(item.category_id) || [];
+      arr.push(toMenuItem(item));
+      itemsByCategory.set(item.category_id, arr);
+    }
 
-    const { data: items, error: itemError } = await supabase.from("menu_items").select("*").order("created_at", { ascending: false });
+    const categoriesByMenu = new Map<string, MenuCategory[]>();
+    for (const cat of categories) {
+      const menuId = cat.menu_id;
+      const arr = categoriesByMenu.get(menuId) || [];
+      arr.push({
+        id: cat.id,
+        name: cat.name,
+        items: itemsByCategory.get(cat.id) || []
+      });
+      categoriesByMenu.set(menuId, arr);
+    }
 
-    if (itemError) throw itemError;
-
-    const menusWithCategories: Menu[] = (menus as DbMenu[])?.map(menu => {
-      const menuCategories: MenuCategory[] = (categories as DbMenuCategory[])
-        ?.filter(cat => cat.menu_id === menu.id)
-        .map(cat => {
-          const categoryItems: MenuItem[] = (items as DbMenuItem[])
-            ?.filter(item => item.category_id === cat.id)
-            .map(item => ({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              description: item.description || undefined,
-              imageUrl: item.image_url || undefined,
-              comingSoon: item.coming_soon
-            }));
-
-          return {
-            id: cat.id,
-            name: cat.name,
-            items: categoryItems
-          };
-        });
-
-      return {
-        id: menu.id,
-        name: menu.name,
-        slug: menu.slug,
-        color: menu.color,
-        sortOrder: menu.sort_order,
-        isActive: menu.is_active,
-        categories: menuCategories
-      };
-    });
+    const menusWithCategories: Menu[] = menus.map(menu => ({
+      id: menu.id,
+      name: menu.name,
+      slug: menu.slug,
+      color: menu.color,
+      sortOrder: menu.sort_order,
+      isActive: menu.is_active,
+      categories: categoriesByMenu.get(menu.id) || []
+    }));
 
     return menusWithCategories;
   } catch (error) {
@@ -405,14 +413,7 @@ const menuSlice = createSlice({
     // Realtime handlers
     realtimeItemInserted: (state, action: PayloadAction<DbMenuItem>) => {
       const item = action.payload;
-      const newItem: MenuItem = {
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        description: item.description || undefined,
-        imageUrl: item.image_url || undefined,
-        comingSoon: item.coming_soon
-      };
+      const newItem = toMenuItem(item);
       // Find category and add item at the beginning (top)
       for (const category of state.shopMenu) {
         if (category.id === item.category_id) {
@@ -434,47 +435,18 @@ const menuSlice = createSlice({
     },
     realtimeItemUpdated: (state, action: PayloadAction<DbMenuItem>) => {
       const item = action.payload;
-      // Update in shopMenu
-      for (const category of state.shopMenu) {
+      const updated = toMenuItem(item);
+      for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
         const idx = category.items.findIndex(i => i.id === item.id);
         if (idx !== -1) {
-          category.items[idx] = {
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            description: item.description || undefined,
-            imageUrl: item.image_url || undefined,
-            comingSoon: item.coming_soon
-          };
-          return;
-        }
-      }
-      // Update in restaurantMenu
-      for (const category of state.restaurantMenu) {
-        const idx = category.items.findIndex(i => i.id === item.id);
-        if (idx !== -1) {
-          category.items[idx] = {
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            description: item.description || undefined,
-            imageUrl: item.image_url || undefined,
-            comingSoon: item.coming_soon
-          };
+          category.items[idx] = updated;
           return;
         }
       }
     },
     realtimeItemDeleted: (state, action: PayloadAction<{ id: string; category_id: string }>) => {
       const { id: itemId } = action.payload;
-      for (const category of state.shopMenu) {
-        const idx = category.items.findIndex(i => i.id === itemId);
-        if (idx !== -1) {
-          category.items.splice(idx, 1);
-          return;
-        }
-      }
-      for (const category of state.restaurantMenu) {
+      for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
         const idx = category.items.findIndex(i => i.id === itemId);
         if (idx !== -1) {
           category.items.splice(idx, 1);
@@ -509,33 +481,11 @@ const menuSlice = createSlice({
       // Update menu item
       .addCase(updateMenuItem.fulfilled, (state, action) => {
         const item = action.payload;
-        // Update in shopMenu
-        for (const category of state.shopMenu) {
+        const updated = toMenuItem(item);
+        for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
           const idx = category.items.findIndex(i => i.id === item.id);
           if (idx !== -1) {
-            category.items[idx] = {
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              description: item.description || undefined,
-              imageUrl: item.image_url || undefined,
-              comingSoon: item.coming_soon
-            };
-            return;
-          }
-        }
-        // Update in restaurantMenu
-        for (const category of state.restaurantMenu) {
-          const idx = category.items.findIndex(i => i.id === item.id);
-          if (idx !== -1) {
-            category.items[idx] = {
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              description: item.description || undefined,
-              imageUrl: item.image_url || undefined,
-              comingSoon: item.coming_soon
-            };
+            category.items[idx] = updated;
             return;
           }
         }
@@ -543,22 +493,8 @@ const menuSlice = createSlice({
       // Add menu item - insert at beginning so new items appear at top
       .addCase(addMenuItem.fulfilled, (state, action) => {
         const item = action.payload;
-        const newItem: MenuItem = {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          description: item.description || undefined,
-          imageUrl: item.image_url || undefined,
-          comingSoon: item.coming_soon
-        };
-        // Find category and add item at the beginning (top)
-        for (const category of state.shopMenu) {
-          if (category.id === item.category_id) {
-            category.items.unshift(newItem);
-            return;
-          }
-        }
-        for (const category of state.restaurantMenu) {
+        const newItem = toMenuItem(item);
+        for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
           if (category.id === item.category_id) {
             category.items.unshift(newItem);
             return;
@@ -568,14 +504,7 @@ const menuSlice = createSlice({
       // Delete menu item
       .addCase(deleteMenuItem.fulfilled, (state, action) => {
         const itemId = action.payload;
-        for (const category of state.shopMenu) {
-          const idx = category.items.findIndex(i => i.id === itemId);
-          if (idx !== -1) {
-            category.items.splice(idx, 1);
-            return;
-          }
-        }
-        for (const category of state.restaurantMenu) {
+        for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
           const idx = category.items.findIndex(i => i.id === itemId);
           if (idx !== -1) {
             category.items.splice(idx, 1);
@@ -671,3 +600,26 @@ const menuSlice = createSlice({
 export const { setActiveShopCategory, setActiveRestaurantCategory, clearError, realtimeItemInserted, realtimeItemUpdated, realtimeItemDeleted } = menuSlice.actions;
 export type { MenuState };
 export default menuSlice.reducer;
+
+// =============================================
+// Memoized Selectors (prevent unnecessary re-renders)
+// =============================================
+const selectMenuState = (state: { menu: ExtendedMenuState }) => state.menu;
+
+export const selectShopMenu = createSelector(selectMenuState, menu => menu.shopMenu);
+export const selectRestaurantMenu = createSelector(selectMenuState, menu => menu.restaurantMenu);
+export const selectActiveShopCategory = createSelector(selectMenuState, menu => menu.activeShopCategory);
+export const selectActiveRestaurantCategory = createSelector(selectMenuState, menu => menu.activeRestaurantCategory);
+export const selectMenus = createSelector(selectMenuState, menu => menu.menus);
+export const selectIsLoading = createSelector(selectMenuState, menu => menu.isLoading);
+export const selectMenuError = createSelector(selectMenuState, menu => menu.error);
+
+export const selectShopActiveItems = createSelector(
+  [selectShopMenu, selectActiveShopCategory],
+  (shopMenu, activeCategory) => shopMenu.find(cat => cat.id === activeCategory)?.items ?? []
+);
+
+export const selectRestaurantActiveItems = createSelector(
+  [selectRestaurantMenu, selectActiveRestaurantCategory],
+  (restaurantMenu, activeCategory) => restaurantMenu.find(cat => cat.id === activeCategory)?.items ?? []
+);

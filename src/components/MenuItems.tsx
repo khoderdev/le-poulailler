@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import type { MenuItem } from "../types";
 import { AedSymbol } from "../assets/AEDSymbol";
-import { getOptimizedImageUrl } from "../lib/imageUpload";
+import { getOptimizedImageUrl, preloadImage } from "../lib/imageUpload";
 
 interface MenuItemsProps {
   items: MenuItem[];
@@ -12,18 +12,38 @@ interface MenuItemsProps {
 
 interface MenuItemCardProps {
   item: MenuItem;
-  itemVariants: any;
+  itemVariants: Record<string, unknown>;
   hoverBorder: string;
   priceColor: string;
 }
 
-const MenuItemCard = ({ item, itemVariants, hoverBorder, priceColor }: MenuItemCardProps) => {
+const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: MenuItemCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
 
   const optimizedImageUrl = item.imageUrl ? getOptimizedImageUrl(item.imageUrl, 200) : null;
   const fullImageUrl = item.imageUrl || null;
+
+  // Keyboard support: Escape to close lightbox
+  useEffect(() => {
+    if (!showLightbox) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowLightbox(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    // Lock body scroll
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [showLightbox]);
+
+  // Preload full-size image on hover so lightbox opens instantly
+  const handleThumbnailHover = useCallback(() => {
+    if (fullImageUrl) preloadImage(fullImageUrl);
+  }, [fullImageUrl]);
 
   return (
     <>
@@ -50,6 +70,8 @@ const MenuItemCard = ({ item, itemVariants, hoverBorder, priceColor }: MenuItemC
           {optimizedImageUrl && !imageError && (
             <div 
               onClick={() => setShowLightbox(true)}
+              onMouseEnter={handleThumbnailHover}
+              onTouchStart={handleThumbnailHover}
               className="shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-gray-300 transition-all shadow-sm"
             >
               {!imageLoaded && (
@@ -72,42 +94,50 @@ const MenuItemCard = ({ item, itemVariants, hoverBorder, priceColor }: MenuItemC
       </motion.div>
 
       {/* Lightbox Modal */}
-      {showLightbox && fullImageUrl && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowLightbox(false)}
-          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4 cursor-zoom-out"
-        >
+      <AnimatePresence>
+        {showLightbox && fullImageUrl && (
           <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.9 }}
-            className="relative max-w-4xl max-h-[90vh] w-full"
-            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowLightbox(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${item.name} image preview`}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
           >
-            <button
-              onClick={() => setShowLightbox(false)}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300 text-3xl font-light w-10 h-10 flex items-center justify-center"
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              className="relative max-w-4xl max-h-[90vh] w-full"
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
-              ×
-            </button>
-            <img
-              src={fullImageUrl}
-              alt={item.name}
-              className="w-full h-full object-contain rounded-lg"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black to-transparent p-4 rounded-b-lg">
-              <h3 className="text-white font-bold text-lg">{item.name}</h3>
-              {item.description && <p className="text-gray-200 text-sm mt-1">{item.description}</p>}
-            </div>
+              <button
+                onClick={() => setShowLightbox(false)}
+                aria-label="Close preview"
+                className="absolute -top-12 right-0 text-white/80 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
+              >
+                ✕
+              </button>
+              <img
+                src={fullImageUrl}
+                alt={item.name}
+                className="w-full h-full object-contain rounded-lg"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+                <h3 className="text-white font-bold text-lg">{item.name}</h3>
+                {item.description && <p className="text-gray-200 text-sm mt-1">{item.description}</p>}
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
-};
+});
 
 const MenuItems = ({ items, categoryId, variant = "shop" }: MenuItemsProps) => {
   const priceColor = variant === "shop" ? "text-[#286091]" : "text-[#9c2622]";

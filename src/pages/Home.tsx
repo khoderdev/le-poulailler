@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { FaFacebook, FaInstagram, FaWhatsapp, FaPhone } from "react-icons/fa";
 import { HiOutlineShoppingBag, HiOutlineClipboardList } from "react-icons/hi";
 import Logo from "../components/Logo";
-import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { fetchMenus } from "../store/menuSlice";
+import { useAppSelector } from "../store/hooks";
+import { selectMenus, selectIsLoading } from "../store/menuSlice";
 
 const socialLinks = [
   {
@@ -64,12 +64,8 @@ const menuLinks: MenuLink[] = [
 ];
 
 const Home = () => {
-  const dispatch = useAppDispatch();
-  const { menus, isLoading } = useAppSelector(state => state.menu);
-
-  useEffect(() => {
-    dispatch(fetchMenus());
-  }, [dispatch]);
+  const menus = useAppSelector(selectMenus);
+  const isLoading = useAppSelector(selectIsLoading);
 
   // Generate dynamic menu links from fetched menus
   const dynamicMenuLinks = useMemo(() => {

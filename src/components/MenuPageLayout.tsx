@@ -2,12 +2,12 @@ import { motion } from "framer-motion";
 import MenuHeader from "../components/MenuHeader";
 import MenuTabs from "../components/MenuTabs";
 import MenuItems from "../components/MenuItems";
-import type { MenuCategory } from "../types";
+import type { MenuCategory, MenuItem } from "../types";
 
 interface MenuPageLayoutProps {
   categories: MenuCategory[];
   activeCategory: string;
-  items: any[];
+  items: MenuItem[];
   onCategoryChange: (id: string) => void;
   variant?: "shop" | "restaurant";
 }

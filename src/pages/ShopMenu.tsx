@@ -1,21 +1,12 @@
-import { useMemo } from "react";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
-import { setActiveShopCategory } from "../store/menuSlice";
+import { setActiveShopCategory, selectShopMenu, selectActiveShopCategory, selectShopActiveItems } from "../store/menuSlice";
 import MenuPageLayout from "../components/MenuPageLayout";
-import type { MenuCategory } from "../types";
 
 const ShopMenu = () => {
   const dispatch = useAppDispatch();
-  const { shopMenu, activeShopCategory } = useAppSelector(
-    (state) => state.menu,
-  );
-
-  const activeItems = useMemo(() => {
-    return (
-      shopMenu.find((cat: MenuCategory) => cat.id === activeShopCategory)
-        ?.items ?? []
-    );
-  }, [shopMenu, activeShopCategory]);
+  const shopMenu = useAppSelector(selectShopMenu);
+  const activeShopCategory = useAppSelector(selectActiveShopCategory);
+  const activeItems = useAppSelector(selectShopActiveItems);
 
   return (
     <MenuPageLayout

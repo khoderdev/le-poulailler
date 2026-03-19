@@ -12,7 +12,7 @@ export const uploadMenuItemImage = async (file: File, itemId: string): Promise<U
     const filePath = `menu-items/${fileName}`;
 
     const { data, error } = await supabase.storage.from("menu-items").upload(filePath, file, {
-      cacheControl: "3600",
+      cacheControl: "31536000",
       upsert: false
     });
 
@@ -48,14 +48,24 @@ export const deleteMenuItemImage = async (imagePath: string): Promise<void> => {
 export const getOptimizedImageUrl = (url: string, width?: number): string => {
   if (!url) return "";
 
-  if (url.includes("supabase")) {
-    const params = new URLSearchParams();
-    if (width) {
-      params.append("width", width.toString());
-      params.append("quality", "80");
-    }
-    return width ? `${url}?${params.toString()}` : url;
+  // Use Supabase Image Transformation (render endpoint) for real server-side resizing
+  if (url.includes("supabase") && width) {
+    const transformedUrl = url.replace(
+      "/storage/v1/object/public/",
+      "/storage/v1/render/image/public/"
+    );
+    return `${transformedUrl}?width=${width}&quality=75&resize=contain`;
   }
 
   return url;
+};
+
+// In-memory cache for preloaded images
+const preloadedImages = new Set<string>();
+
+export const preloadImage = (url: string): void => {
+  if (!url || preloadedImages.has(url)) return;
+  const img = new Image();
+  img.src = url;
+  preloadedImages.add(url);
 };
