@@ -1,8 +1,15 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback, memo } from "react";
+import { motion, AnimatePresence, useMotionValue, animate as motionAnimate } from "framer-motion";
+import { useState, useEffect, useCallback, memo, useRef } from "react";
 import type { MenuItem } from "../types";
 import { AedSymbol } from "../assets/AEDSymbol";
 import { getOptimizedImageUrl, preloadImage } from "../lib/imageUpload";
+
+interface DragInfo {
+  point: { x: number; y: number };
+  delta: { x: number; y: number };
+  offset: { x: number; y: number };
+  velocity: { x: number; y: number };
+}
 
 interface MenuItemsProps {
   items: MenuItem[];
@@ -17,33 +24,95 @@ interface MenuItemCardProps {
   priceColor: string;
 }
 
+const ZOOM_LEVEL = 2.5;
+const SPRING = { type: "spring" as const, stiffness: 300, damping: 30 };
+const DISMISS_THRESHOLD = 120;
+
 const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: MenuItemCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [origin, setOrigin] = useState("50% 50%");
+
+  const imgX = useMotionValue(0);
+  const imgY = useMotionValue(0);
+  const bgOpacity = useMotionValue(1);
+  const wasDragged = useRef(false);
 
   const optimizedImageUrl = item.imageUrl ? getOptimizedImageUrl(item.imageUrl, 200) : null;
   const fullImageUrl = item.imageUrl || null;
 
-  // Keyboard support: Escape to close lightbox
+  // Keyboard + scroll lock
   useEffect(() => {
     if (!showLightbox) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowLightbox(false);
+      if (e.key === "Escape") {
+        if (isZoomed) setIsZoomed(false);
+        else closeLightbox();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
-    // Lock body scroll
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [showLightbox]);
+  }, [showLightbox, isZoomed]);
 
-  // Preload full-size image on hover so lightbox opens instantly
+  // Reset pan position when zooming out
+  useEffect(() => {
+    if (!isZoomed) {
+      motionAnimate(imgX, 0, SPRING);
+      motionAnimate(imgY, 0, SPRING);
+      bgOpacity.set(1);
+    }
+  }, [isZoomed, imgX, imgY, bgOpacity]);
+
+  // Full reset when lightbox closes
+  useEffect(() => {
+    if (!showLightbox) {
+      setIsZoomed(false);
+      setOrigin("50% 50%");
+      imgX.set(0);
+      imgY.set(0);
+      bgOpacity.set(1);
+    }
+  }, [showLightbox, imgX, imgY, bgOpacity]);
+
   const handleThumbnailHover = useCallback(() => {
     if (fullImageUrl) preloadImage(fullImageUrl);
   }, [fullImageUrl]);
+
+  const closeLightbox = useCallback(() => {
+    setIsZoomed(false);
+    setShowLightbox(false);
+  }, []);
+
+  // Toggle zoom on click — zoom from the exact tap point
+  const handleImageClick = useCallback(
+    (e: React.MouseEvent<HTMLImageElement>) => {
+      e.stopPropagation();
+      if (wasDragged.current) return;
+
+      if (!isZoomed) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        setOrigin(`${x}% ${y}%`);
+        setIsZoomed(true);
+      } else {
+        setIsZoomed(false);
+      }
+    },
+    [isZoomed]
+  );
+
+  // Backdrop click: zoom out first, then close
+  const handleBackdropClick = useCallback(() => {
+    if (isZoomed) setIsZoomed(false);
+    else closeLightbox();
+  }, [isZoomed, closeLightbox]);
 
   return (
     <>
@@ -68,7 +137,7 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
 
           {/* Right side: Image thumbnail */}
           {optimizedImageUrl && !imageError && (
-            <div 
+            <div
               onClick={() => setShowLightbox(true)}
               onMouseEnter={handleThumbnailHover}
               onTouchStart={handleThumbnailHover}
@@ -79,21 +148,21 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
                   <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
                 </div>
               )}
-              <img 
-                src={optimizedImageUrl} 
-                alt={item.name} 
-                loading="lazy" 
-                decoding="async" 
-                onLoad={() => setImageLoaded(true)} 
-                onError={() => setImageError(true)} 
-                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} 
+              <img
+                src={optimizedImageUrl}
+                alt={item.name}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
               />
             </div>
           )}
         </div>
       </motion.div>
 
-      {/* Lightbox Modal */}
+      {/* Threads-style Lightbox */}
       <AnimatePresence>
         {showLightbox && fullImageUrl && (
           <motion.div
@@ -101,35 +170,84 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            onClick={() => setShowLightbox(false)}
+            onClick={handleBackdropClick}
             role="dialog"
             aria-modal="true"
             aria-label={`${item.name} image preview`}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
+            className="fixed inset-0 z-50 flex items-center justify-center"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="relative max-w-4xl max-h-[90vh] w-full"
-              onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+            {/* Backdrop — opacity tracks swipe-to-dismiss drag */}
+            <motion.div className="absolute inset-0 bg-black/95" style={{ opacity: bgOpacity }} />
+
+            {/* Close button — fades out when zoomed */}
+            <motion.button
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                closeLightbox();
+              }}
+              animate={{ opacity: isZoomed ? 0 : 1 }}
+              transition={{ duration: 0.15 }}
+              aria-label="Close preview"
+              className="absolute top-4 right-4 z-10 text-white/80 hover:text-white text-xl w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
+              style={{ pointerEvents: isZoomed ? "none" : "auto" }}
             >
-              <button
-                onClick={() => setShowLightbox(false)}
-                aria-label="Close preview"
-                className="absolute -top-12 right-0 text-white/80 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
-              >
-                ✕
-              </button>
-              <img
-                src={fullImageUrl}
-                alt={item.name}
-                className="w-full h-full object-contain rounded-lg"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+              ✕
+            </motion.button>
+
+            {/* Zoomable, pannable, swipe-to-dismiss image */}
+            <motion.img
+              src={fullImageUrl}
+              alt={item.name}
+              className={`relative z-1 max-w-[92vw] max-h-[82vh] object-contain select-none touch-none rounded-2xl ${isZoomed ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"}`}
+              style={{ x: imgX, y: imgY, transformOrigin: origin }}
+              animate={{
+                scale: isZoomed ? ZOOM_LEVEL : 1,
+                borderRadius: isZoomed ? "0px" : "16px"
+              }}
+              transition={SPRING}
+              drag={isZoomed ? true : "y"}
+              dragElastic={isZoomed ? 0.15 : 0.7}
+              dragMomentum={isZoomed}
+              dragConstraints={
+                isZoomed
+                  ? { top: -400, bottom: 400, left: -400, right: 400 }
+                  : { top: 0, bottom: 0 }
+              }
+              onDragStart={() => {
+                wasDragged.current = true;
+              }}
+              onDrag={(_e: Event, info: DragInfo) => {
+                // Swipe-to-dismiss: fade backdrop as user drags down (only when not zoomed)
+                if (!isZoomed) {
+                  const progress = Math.min(Math.abs(info.offset.y) / 300, 1);
+                  bgOpacity.set(1 - progress * 0.6);
+                }
+              }}
+              onDragEnd={(_e: Event, info: DragInfo) => {
+                if (!isZoomed) {
+                  // Dismiss if swiped far or fast enough
+                  if (Math.abs(info.offset.y) > DISMISS_THRESHOLD || Math.abs(info.velocity.y) > 600) {
+                    closeLightbox();
+                  } else {
+                    motionAnimate(bgOpacity, 1, { duration: 0.2 });
+                  }
+                }
+                setTimeout(() => {
+                  wasDragged.current = false;
+                }, 100);
+              }}
+              onClick={handleImageClick}
+            />
+
+            {/* Info overlay — slides away when zoomed */}
+            <motion.div
+              animate={{ opacity: isZoomed ? 0 : 1, y: isZoomed ? 30 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-0 left-0 right-0 z-2 bg-linear-to-t from-black/70 via-black/30 to-transparent p-6 pb-8 pointer-events-none"
+            >
+              <div className="max-w-4xl mx-auto">
                 <h3 className="text-white font-bold text-lg">{item.name}</h3>
-                {item.description && <p className="text-gray-200 text-sm mt-1">{item.description}</p>}
+                {item.description && <p className="text-gray-300 text-sm mt-1">{item.description}</p>}
               </div>
             </motion.div>
           </motion.div>
