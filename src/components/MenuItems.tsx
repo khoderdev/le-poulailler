@@ -21,12 +21,9 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [useFallback, setUseFallback] = useState(false);
 
-  const thumbnailUrl = item.imageUrl ? getOptimizedImageUrl(item.imageUrl, 200) : null;
+  const optimizedImageUrl = item.imageUrl ? getOptimizedImageUrl(item.imageUrl, 200) : null;
   const fullImageUrl = item.imageUrl || null;
-  // Use thumbnail if available, fall back to original for pre-existing images
-  const optimizedImageUrl = useFallback ? fullImageUrl : thumbnailUrl;
 
   // Keyboard support: Escape to close lightbox
   useEffect(() => {
@@ -88,14 +85,7 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
                 loading="lazy" 
                 decoding="async" 
                 onLoad={() => setImageLoaded(true)} 
-                onError={() => {
-                  if (!useFallback && thumbnailUrl !== fullImageUrl) {
-                    // Thumbnail missing (old image) — fall back to original
-                    setUseFallback(true);
-                  } else {
-                    setImageError(true);
-                  }
-                }} 
+                onError={() => setImageError(true)} 
                 className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} 
               />
             </div>

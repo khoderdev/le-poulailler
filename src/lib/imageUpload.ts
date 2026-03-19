@@ -76,16 +76,13 @@ export const deleteMenuItemImage = async (imagePath: string): Promise<void> => {
   }
 };
 
-export const getOptimizedImageUrl = (url: string, width?: number): string => {
+export const getOptimizedImageUrl = (url: string, _width?: number): string => {
   if (!url) return "";
-
-  // For small sizes (thumbnails), use the pre-generated -thumb version
-  if (width && width <= 400 && url.includes("supabase")) {
-    const thumbUrl = url.replace(/(\.[^.]+)$/, `${THUMB_SUFFIX}$1`);
-    // Only return thumb URL if it differs (avoids infinite loop on already-thumb URLs)
-    if (thumbUrl !== url) return thumbUrl;
-  }
-
+  // Thumbnails are generated on upload but we serve the original URL here.
+  // Existing images don't have thumbnails, so guessing thumb URLs causes 404 spam.
+  // New uploads are already compressed (max 1200px, WebP) so they're fast enough.
+  // To enable thumbnail serving, add a thumbnail_url column to the DB
+  // or migrate all existing images with a one-time script.
   return url;
 };
 
