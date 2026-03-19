@@ -2,6 +2,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Home from "./pages/Home";
+import ButtonExamples from "./components/ButtonExamples";
 
 const ShopMenu = lazy(() => import("./pages/ShopMenu"));
 const RestaurantMenu = lazy(() => import("./pages/RestaurantMenu"));
@@ -31,6 +32,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/menu" replace />} />
             <Route path="/menu" element={<Home />} />
+            <Route path="/buttons" element={<ButtonExamples />} />
             <Route path="/shop-menu" element={<ShopMenu />} />
             <Route path="/restaurant-menu" element={<RestaurantMenu />} />
             <Route path="/admin" element={<AdminLogin />} />
