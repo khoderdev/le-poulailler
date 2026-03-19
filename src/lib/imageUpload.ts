@@ -45,18 +45,11 @@ export const deleteMenuItemImage = async (imagePath: string): Promise<void> => {
   }
 };
 
-export const getOptimizedImageUrl = (url: string, width?: number): string => {
+export const getOptimizedImageUrl = (url: string, _width?: number): string => {
   if (!url) return "";
-
-  // Use Supabase Image Transformation (render endpoint) for real server-side resizing
-  if (url.includes("supabase") && width) {
-    const transformedUrl = url.replace(
-      "/storage/v1/object/public/",
-      "/storage/v1/render/image/public/"
-    );
-    return `${transformedUrl}?width=${width}&quality=75&resize=contain`;
-  }
-
+  // Supabase Image Transformations require a paid add-on.
+  // Return the original public URL; client-side optimizations
+  // (lazy loading, decoding="async", preloadImage) handle the rest.
   return url;
 };
 
