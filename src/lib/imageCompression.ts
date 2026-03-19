@@ -18,6 +18,15 @@ const supportsWebP = (() => {
 const OUTPUT_TYPE = supportsWebP ? "image/webp" : "image/jpeg";
 export const OUTPUT_EXT = supportsWebP ? "webp" : "jpg";
 
+/** Maximum file size allowed for upload (512 KB) */
+export const MAX_UPLOAD_SIZE = 512 * 1024;
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -83,3 +92,4 @@ export async function generateThumbnail(
 ): Promise<Blob> {
   return compressImage(file, maxWidth, quality);
 }
+

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiUpload, FiX, FiImage } from "react-icons/fi";
+import { FiUpload, FiX, FiImage, FiAlertCircle } from "react-icons/fi";
+import { MAX_UPLOAD_SIZE, formatFileSize } from "../lib/imageCompression";
 
 interface ImageUploadProps {
   currentImageUrl?: string;
@@ -14,6 +15,8 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
   const [isDragging, setIsDragging] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update preview when currentImageUrl changes
@@ -25,8 +28,18 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
     }
   }, [currentImageUrl]);
 
+  // Auto-dismiss validation error after 5s
+  useEffect(() => {
+    if (!validationError) return;
+    const timer = setTimeout(() => setValidationError(null), 5000);
+    return () => clearTimeout(timer);
+  }, [validationError]);
+
   const handleFileChange = useCallback(
     (file: File | null) => {
+      setValidationError(null);
+      setFileSize(null);
+
       if (!file) {
         setPreview(null);
         onImageChange(null);
@@ -35,15 +48,19 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
 
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        alert("Please upload an image file");
+        setValidationError("Invalid file type. Please upload an image (PNG, JPG, or WebP).");
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size should be less than 5MB");
+      // Validate file size (hard 512KB limit)
+      if (file.size > MAX_UPLOAD_SIZE) {
+        setValidationError(
+          `File is ${formatFileSize(file.size)}. Maximum allowed is ${formatFileSize(MAX_UPLOAD_SIZE)}.`
+        );
         return;
       }
+
+      setFileSize(file.size);
 
       // Create preview
       const reader = new FileReader();
@@ -88,6 +105,8 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
 
   const handleRemove = () => {
     setPreview(null);
+    setFileSize(null);
+    setValidationError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -142,7 +161,14 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
                 </motion.button>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">Click the X to remove image</p>
+            <div className="flex items-center justify-between mt-2 px-1">
+              <p className="text-xs text-gray-500">Click the X to remove image</p>
+              {fileSize && (
+                <p className="text-xs text-gray-400">
+                  {formatFileSize(fileSize)}
+                </p>
+              )}
+            </div>
           </motion.div>
         ) : (
           <motion.div
@@ -156,17 +182,40 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
             onClick={handleClick}
             className={`
               w-full h-48 rounded-lg border-2 border-dashed 
-              ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}
+              ${validationError ? "border-red-400 bg-red-50" : isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}
               ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:border-blue-400 hover:bg-blue-50"}
               transition-all duration-200 flex flex-col items-center justify-center gap-3
             `}
           >
-            <motion.div animate={isDragging ? { scale: 1.1 } : { scale: 1 }} className={`p-4 rounded-full ${isDragging ? "bg-blue-100" : "bg-gray-100"}`}>
-              {isDragging ? <FiUpload className="w-8 h-8 text-blue-500" /> : <FiImage className="w-8 h-8 text-gray-400" />}
+            <motion.div animate={isDragging ? { scale: 1.1 } : { scale: 1 }} className={`p-4 rounded-full ${validationError ? "bg-red-100" : isDragging ? "bg-blue-100" : "bg-gray-100"}`}>
+              {validationError ? (
+                <FiAlertCircle className="w-8 h-8 text-red-500" />
+              ) : isDragging ? (
+                <FiUpload className="w-8 h-8 text-blue-500" />
+              ) : (
+                <FiImage className="w-8 h-8 text-gray-400" />
+              )}
             </motion.div>
             <div className="text-center px-4">
               <p className="text-sm font-medium text-gray-700">{isDragging ? "Drop image here" : "Click to upload or drag and drop"}</p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG, WebP — max {formatFileSize(MAX_UPLOAD_SIZE)}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Inline validation error */}
+      <AnimatePresence>
+        {validationError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+              <FiAlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="text-xs text-red-600">{validationError}</p>
             </div>
           </motion.div>
         )}

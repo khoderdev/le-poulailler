@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { compressImage, generateThumbnail, OUTPUT_EXT } from "./imageCompression";
+import { compressImage, generateThumbnail, OUTPUT_EXT, MAX_UPLOAD_SIZE, formatFileSize } from "./imageCompression";
 
 export interface UploadImageResult {
   url: string;
@@ -15,6 +15,13 @@ export const uploadMenuItemImage = async (file: File, itemId: string): Promise<U
     const fullPath = `menu-items/${baseName}.${OUTPUT_EXT}`;
     const thumbPath = `menu-items/${baseName}${THUMB_SUFFIX}.${OUTPUT_EXT}`;
     const contentType = OUTPUT_EXT === "webp" ? "image/webp" : "image/jpeg";
+
+    // Hard reject if file exceeds the upload size limit
+    if (file.size > MAX_UPLOAD_SIZE) {
+      throw new Error(
+        `Image is ${formatFileSize(file.size)}. Maximum allowed is ${formatFileSize(MAX_UPLOAD_SIZE)}.`
+      );
+    }
 
     // Compress original (max 1200px) and generate thumbnail (400px) in parallel
     const [compressedBlob, thumbnailBlob] = await Promise.all([

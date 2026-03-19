@@ -5,7 +5,7 @@ import { FaFacebook, FaInstagram, FaWhatsapp, FaPhone } from "react-icons/fa";
 import { HiOutlineShoppingBag, HiOutlineClipboardList } from "react-icons/hi";
 import Logo from "../components/Logo";
 import { useAppSelector } from "../store/hooks";
-import { selectMenus, selectIsLoading } from "../store/menuSlice";
+import { selectMenus } from "../store/menuSlice";
 
 const socialLinks = [
   {
@@ -65,7 +65,6 @@ const menuLinks: MenuLink[] = [
 
 const Home = () => {
   const menus = useAppSelector(selectMenus);
-  const isLoading = useAppSelector(selectIsLoading);
 
   // Generate dynamic menu links from fetched menus
   const dynamicMenuLinks = useMemo(() => {
@@ -121,23 +120,18 @@ const Home = () => {
 
           {/* Menu Cards */}
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-col gap-4 select-none! p-8!">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
-              </div>
-            ) : (
-              dynamicMenuLinks.map(({ to, title, subtitle, icon: Icon, bgColor, shadowColor, customStyle }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  style={customStyle}
-                  className={`group relative flex items-center gap-5 p-5 md:p-6 
-                             ${!customStyle ? bgColor : ''}
-                             rounded-2xl shadow-lg ${shadowColor}
-                             hover:shadow-xl hover:-translate-y-0.5
-                             active:translate-y-0 active:shadow-lg
-                             transition-all duration-300`}
-                >
+            {dynamicMenuLinks.map(({ to, title, subtitle, icon: Icon, bgColor, shadowColor, customStyle }) => (
+              <Link
+                key={to}
+                to={to}
+                style={customStyle}
+                className={`group relative flex items-center gap-5 p-5 md:p-6 
+                           ${!customStyle ? bgColor : ''}
+                           rounded-2xl shadow-lg ${shadowColor}
+                           hover:shadow-xl hover:-translate-y-0.5
+                           active:translate-y-0 active:shadow-lg
+                           transition-all duration-300`}
+              >
                 <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-white/20 rounded-xl backdrop-blur-sm">
                   <Icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
                 </div>
@@ -145,14 +139,13 @@ const Home = () => {
                   <h2 className="text-white font-bold text-lg md:text-xl">{title}</h2>
                   <p className="text-white/80 text-sm">{subtitle}</p>
                 </div>
-                  <div className="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </Link>
-              ))
-            )}
+                <div className="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
+            ))}
           </motion.div>
         </div>
       </main>
