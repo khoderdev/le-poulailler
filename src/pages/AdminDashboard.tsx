@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiTrash2, FiEdit2 } from "react-icons/fi";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
 import { fetchMenuData, fetchMenus, addMenu, deleteMenu, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 import ImageUpload from "../components/ImageUpload";
+import Button from "../components/Button";
 import { uploadMenuItemImage, deleteMenuItemImage } from "../lib/imageUpload";
 
 interface EditingItem extends MenuItem {
@@ -367,16 +368,13 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-2 sm:py-4 flex items-center justify-between relative">
-          <Link to="/">
-            <motion.button whileHover={{ scale: 1.05, x: -2 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-200 group">
-              <FiArrowLeft className="text-lg md:text-xl transition-transform group-hover:-translate-x-0.5" />
-              <span className="text-sm font-medium hidden sm:inline">Back</span>
-            </motion.button>
-          </Link>
+          <Button variant="ghost" icon={<FiArrowLeft />} size="sm" onClick={() => navigate("/")} className="rounded-xl hover:text-cyan-600 hover:bg-cyan-50">
+            <span className="hidden sm:inline">Back</span>
+          </Button>
           <h1 className="absolute left-1/2 -translate-x-1/2 text-lg sm:text-2xl font-bold text-gray-800">Menu Management</h1>
-          <button onClick={handleLogout} className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
             Logout
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -435,10 +433,9 @@ const AdminDashboard = () => {
             ))}
 
           {/* Add New Menu Button */}
-          <button onClick={() => setIsAddingMenu(true)} className="px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors bg-white text-gray-600 hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center gap-2" title="Add New Menu">
-            <FiPlus className="w-5 h-5" />
+          <Button variant="ghost" icon={<FiPlus />} size="sm" onClick={() => setIsAddingMenu(true)} className="border-2 border-dashed border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50" title="Add New Menu">
             <span className="hidden sm:inline">New Menu</span>
-          </button>
+          </Button>
         </div>
 
         {/* Add Menu Modal */}
@@ -460,20 +457,20 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <button onClick={handleAddMenu} disabled={saveStatus === "saving" || !newMenuName.trim()} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
+                    <Button variant="primary" disabled={saveStatus === "saving" || !newMenuName.trim()} onClick={handleAddMenu} className="flex-1">
                       {saveStatus === "saving" ? "Creating..." : saveStatus === "saved" ? "Created!" : "Create Menu"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
                       onClick={() => {
                         setIsAddingMenu(false);
                         setNewMenuName("");
                         setNewMenuColor("#286091");
                         setSaveStatus("idle");
                       }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </motion.div>
@@ -492,9 +489,9 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[25vh] sm:max-h-[35vh] lg:max-h-none overflow-y-auto flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-gray-800">Categories</h2>
-                  <button onClick={() => setIsAddingCategory(!isAddingCategory)} className={`px-3 py-1.5 text-sm rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}>
+                  <Button variant="primary" size="xs" onClick={() => setIsAddingCategory(!isAddingCategory)}>
                     + Add
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Add Category Form */}
@@ -503,19 +500,20 @@ const AdminDashboard = () => {
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 p-3 bg-green-50 rounded-lg">
                       <input type="text" placeholder="Category name" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddCategory()} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2" autoFocus />
                       <div className="flex gap-2">
-                        <button onClick={handleAddCategory} disabled={saveStatus === "saving" || !newCategoryName.trim()} className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
+                        <Button variant="primary" size="xs" disabled={saveStatus === "saving" || !newCategoryName.trim()} onClick={handleAddCategory} className="flex-1">
                           {saveStatus === "saving" ? "Saving..." : "Save"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           onClick={() => {
                             setIsAddingCategory(false);
                             setNewCategoryName("");
                             setSaveStatus("idle");
                           }}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
                         >
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </motion.div>
                   )}
@@ -538,12 +536,12 @@ const AdminDashboard = () => {
                             autoFocus
                           />
                           <div className="flex gap-1">
-                            <button onClick={handleSaveCategoryEdit} className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                            <Button variant="primary" size="xs" onClick={handleSaveCategoryEdit} className="flex-1">
                               Save
-                            </button>
-                            <button onClick={handleCancelCategoryEdit} className="flex-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">
+                            </Button>
+                            <Button variant="ghost" size="xs" onClick={handleCancelCategoryEdit} className="flex-1">
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : (
@@ -588,15 +586,17 @@ const AdminDashboard = () => {
                 <div className="px-4 border-b flex items-center justify-between">
                   <h2 className="font-bold text-gray-900">{currentCategory?.name || "Select a category"}</h2>
                   {currentCategory && (
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => {
                         setIsAddingNew(true);
                         setEditingItem(null);
                       }}
-                      className={`px-4 py-2 rounded-lg text-sm my-2 text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}
+                      className="my-2"
                     >
                       + Add
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -641,12 +641,12 @@ const AdminDashboard = () => {
                           </label>
                         </div>
                         <div className="flex gap-2 mt-4">
-                          <button onClick={handleAddItem} disabled={saveStatus === "saving"} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                          <Button variant="primary" disabled={saveStatus === "saving"} onClick={handleAddItem}>
                             {saveStatus === "saving" ? "Saving..." : "Save"}
-                          </button>
-                          <button onClick={() => setIsAddingNew(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                          </Button>
+                          <Button variant="ghost" onClick={() => setIsAddingNew(false)}>
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       </motion.div>
                     )}
@@ -728,18 +728,18 @@ const AdminDashboard = () => {
                             </label>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={handleSaveEdit} disabled={saveStatus === "saving"} className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${saveStatus === "saved" ? "bg-green-600" : saveStatus === "error" ? "bg-red-600" : "bg-blue-600 hover:bg-blue-700"} disabled:opacity-50`}>
-                              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : saveStatus === "error" ? "Error" : "Save Changes"}
-                            </button>
-                            <button
+                            <Button variant={saveStatus === "error" ? "danger" : "primary"} disabled={saveStatus === "saving"} onClick={handleSaveEdit}>
+                              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved!" : saveStatus === "error" ? "Error" : "Save"}
+                            </Button>
+                            <Button
+                              variant="ghost"
                               onClick={() => {
                                 setEditingItem(null);
                                 setSaveStatus("idle");
                               }}
-                              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         </motion.div>
                       ) : (
@@ -758,12 +758,8 @@ const AdminDashboard = () => {
                             <p className={`font-semibold mt-1 ${activeTab === "shop" ? "text-[#286091]" : "text-[#9c2622]"}`}>{item.price} AED</p>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <button onClick={() => handleEditItem(item, selectedCategory)} className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                              Edit
-                            </button>
-                            <button onClick={() => handleDeleteItem(item.id)} className="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
-                              Delete
-                            </button>
+                            <Button variant="ghost" size="xs" icon={<FiEdit2 />} onClick={() => handleEditItem(item, selectedCategory)} aria-label="Edit" />
+                            <Button variant="danger" size="xs" icon={<FiTrash2 />} onClick={() => handleDeleteItem(item.id)} aria-label="Delete" />
                           </div>
                         </div>
                       )}
