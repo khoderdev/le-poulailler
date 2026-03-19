@@ -155,7 +155,7 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
                   setImageError(true);
                 }}
               />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center">
                 <motion.button initial={{ opacity: 0, scale: 0.8 }} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} onClick={handleRemove} disabled={disabled} className="opacity-0 group-hover:opacity-100 bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" type="button">
                   <FiX className="w-5 h-5" />
                 </motion.button>
