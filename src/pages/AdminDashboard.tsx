@@ -82,7 +82,7 @@ const AdminDashboard = () => {
     // For legacy shop/restaurant menus
     if (activeTab === "shop") return shopMenu;
     if (activeTab === "restaurant") return restaurantMenu;
-    
+
     // For dynamic custom menus
     const customMenu = menus.find(m => m.id === activeTab);
     return customMenu?.categories || [];
@@ -298,30 +298,33 @@ const AdminDashboard = () => {
     }
   }, [dispatch, newMenuName, newMenuColor]);
 
-  const handleDeleteMenu = useCallback(async (menuId: string, menuName: string) => {
-    // Prevent deletion of default menus
-    if (menuId === "shop" || menuId === "restaurant") {
-      alert("Cannot delete default Shop or Restaurant menus.");
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete "${menuName}"? This will permanently delete all categories and items in this menu.`)) {
-      return;
-    }
-
-    try {
-      await dispatch(deleteMenu(menuId)).unwrap();
-      // Refresh menus after deletion
-      dispatch(fetchMenus());
-      // Switch to shop menu if the deleted menu was active
-      if (activeTab !== "shop" && activeTab !== "restaurant") {
-        setActiveTab("shop");
+  const handleDeleteMenu = useCallback(
+    async (menuId: string, menuName: string) => {
+      // Prevent deletion of default menus
+      if (menuId === "shop" || menuId === "restaurant") {
+        alert("Cannot delete default Shop or Restaurant menus.");
+        return;
       }
-    } catch (error) {
-      console.error("Failed to delete menu:", error);
-      alert("Failed to delete menu. Please try again.");
-    }
-  }, [dispatch, activeTab]);
+
+      if (!confirm(`Are you sure you want to delete "${menuName}"? This will permanently delete all categories and items in this menu.`)) {
+        return;
+      }
+
+      try {
+        await dispatch(deleteMenu(menuId)).unwrap();
+        // Refresh menus after deletion
+        dispatch(fetchMenus());
+        // Switch to shop menu if the deleted menu was active
+        if (activeTab !== "shop" && activeTab !== "restaurant") {
+          setActiveTab("shop");
+        }
+      } catch (error) {
+        console.error("Failed to delete menu:", error);
+        alert("Failed to delete menu. Please try again.");
+      }
+    },
+    [dispatch, activeTab]
+  );
 
   const handleDeleteCategory = useCallback(
     async (categoryId: string, categoryName: string) => {
@@ -363,30 +366,30 @@ const AdminDashboard = () => {
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between relative">
+        <div className="max-w-7xl mx-auto px-4 py-2 sm:py-4 flex items-center justify-between relative">
           <Link to="/">
             <motion.button whileHover={{ scale: 1.05, x: -2 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-200 group">
               <FiArrowLeft className="text-lg md:text-xl transition-transform group-hover:-translate-x-0.5" />
               <span className="text-sm font-medium hidden sm:inline">Back</span>
             </motion.button>
           </Link>
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-bold text-gray-800">Menu Management</h1>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-lg sm:text-2xl font-bold text-gray-800">Menu Management</h1>
           <button onClick={handleLogout} className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
             Logout
           </button>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-4 sm:py-6 overflow-hidden flex flex-col min-h-0">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-2 sm:py-6 overflow-hidden flex flex-col min-h-0">
         {/* Menu Type Tabs */}
-        <div className="flex gap-2 mb-4 sm:mb-6 shrink-0 flex-wrap">
+        <div className="flex gap-2 mb-2 sm:mb-6 shrink-0 flex-wrap">
           {/* Shop Menu - Default */}
           <button
             onClick={() => {
               setActiveTab("shop");
               setSelectedCategory("");
             }}
-            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${activeTab === "shop" ? "bg-[#286091] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors ${activeTab === "shop" ? "bg-[#286091] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
           >
             Shop Menu
           </button>
@@ -397,42 +400,42 @@ const AdminDashboard = () => {
               setActiveTab("restaurant");
               setSelectedCategory("");
             }}
-            className={`px-6 py-3 rounded-lg font-semibold transition-colors ${activeTab === "restaurant" ? "bg-[#9c2622] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors ${activeTab === "restaurant" ? "bg-[#9c2622] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
           >
             Restaurant Menu
           </button>
 
           {/* Dynamic Custom Menus */}
-          {menus?.filter((m) => m.id !== "shop" && m.id !== "restaurant").map((menu) => (
-            <div key={menu.id} className="relative group">
-              <button
-                onClick={() => {
-                  setActiveTab(menu.id as any);
-                  setSelectedCategory("");
-                }}
-                style={{ backgroundColor: activeTab === menu.id ? menu.color : undefined }}
-                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  activeTab === menu.id ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {menu.name}
-              </button>
-              {/* Delete button - only shows on hover */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteMenu(menu.id, menu.name);
-                }}
-                className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
-                title="Delete Menu"
-              >
-                <FiTrash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+          {menus
+            ?.filter(m => m.id !== "shop" && m.id !== "restaurant")
+            .map(menu => (
+              <div key={menu.id} className="relative group">
+                <button
+                  onClick={() => {
+                    setActiveTab(menu.id as any);
+                    setSelectedCategory("");
+                  }}
+                  style={{ backgroundColor: activeTab === menu.id ? menu.color : undefined }}
+                  className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors ${activeTab === menu.id ? "text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                >
+                  {menu.name}
+                </button>
+                {/* Delete button - only shows on hover */}
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDeleteMenu(menu.id, menu.name);
+                  }}
+                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg"
+                  title="Delete Menu"
+                >
+                  <FiTrash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
 
           {/* Add New Menu Button */}
-          <button onClick={() => setIsAddingMenu(true)} className="px-4 py-3 rounded-lg font-semibold transition-colors bg-white text-gray-600 hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center gap-2" title="Add New Menu">
+          <button onClick={() => setIsAddingMenu(true)} className="px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-colors bg-white text-gray-600 hover:bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 flex items-center gap-2" title="Add New Menu">
             <FiPlus className="w-5 h-5" />
             <span className="hidden sm:inline">New Menu</span>
           </button>
@@ -483,10 +486,10 @@ const AdminDashboard = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 flex-1 min-h-0 lg:grid-rows-[1fr]">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap- flex-1 min-h-0 lg:grid-rows-[1fr]">
             {/* Categories Sidebar */}
             <div className="lg:col-span-1 min-h-0 flex flex-col">
-              <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[40vh] lg:max-h-none overflow-y-auto flex flex-col">
+              <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[25vh] sm:max-h-[35vh] lg:max-h-none overflow-y-auto flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-gray-800">Categories</h2>
                   <button onClick={() => setIsAddingCategory(!isAddingCategory)} className={`px-3 py-1.5 text-sm rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}>
@@ -545,7 +548,7 @@ const AdminDashboard = () => {
                         </div>
                       ) : (
                         <>
-                          <button onClick={() => setSelectedCategory(category.id)} className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}>
+                          <button onClick={() => setSelectedCategory(category.id)} className={`w-full text-left px-3 py-2 sm:px-4 sm:py-3 rounded-lg text-sm sm:text-base transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-[#286091] text-white" : "bg-[#9c2622] text-white") : "hover:bg-gray-100 text-gray-700"}`}>
                             <span className="font-medium">{category.name}</span>
                             <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
                           </button>
@@ -581,18 +584,18 @@ const AdminDashboard = () => {
 
             {/* Items List */}
             <div className="lg:col-span-3 min-h-0 flex flex-col">
-              <div className="bg-white rounded-xl shadow-sm flex-1 flex flex-col min-h-0 max-h-[50vh] sm:max-h-[60vh] lg:max-h-none overflow-hidden">
-                <div className="p-4 border-b flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-800">{currentCategory?.name || "Select a category"}</h2>
+              <div className="bg-white rounded-xl shadow-sm flex-1 flex flex-col min-h-0 max-h-[55vh] sm:max-h-[65vh] lg:max-h-none overflow-hidden -mt-8 sm:mt-0">
+                <div className="px-4 border-b flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900">{currentCategory?.name || "Select a category"}</h2>
                   {currentCategory && (
                     <button
                       onClick={() => {
                         setIsAddingNew(true);
                         setEditingItem(null);
                       }}
-                      className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}
+                      className={`px-4 py-2 rounded-lg text-sm my-2 text-white font-medium transition-colors ${activeTab === "shop" ? "bg-[#286091] hover:bg-[#1e4a6f]" : "bg-[#9c2622] hover:bg-[#7a1e1b]"}`}
                     >
-                      + Add Item
+                      + Add
                     </button>
                   )}
                 </div>
@@ -602,7 +605,7 @@ const AdminDashboard = () => {
                   <AnimatePresence>
                     {isAddingNew && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="p-4 bg-green-50">
-                        <h3 className="font-medium text-gray-800 mb-4">Add New Item</h3>
+                        <h3 className="font-medium text-gray-800 mb-4">Add Item</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input type="text" placeholder="Item name" value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
                           <input type="text" placeholder="Price (e.g., 25 or 45/55)" value={newItem.price} onChange={e => setNewItem({ ...newItem, price: e.target.value })} className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
