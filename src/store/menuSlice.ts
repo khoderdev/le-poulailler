@@ -521,9 +521,9 @@ const menuSlice = createSlice({
           items: []
         };
         if (category.menu_type === "shop") {
-          state.shopMenu.push(newCategory);
+          state.shopMenu.unshift(newCategory);
         } else {
-          state.restaurantMenu.push(newCategory);
+          state.restaurantMenu.unshift(newCategory);
         }
       })
       // Update menu category
