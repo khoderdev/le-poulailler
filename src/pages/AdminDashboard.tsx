@@ -74,12 +74,6 @@ const AdminDashboard = () => {
 
   const currentCategory = useMemo(() => currentMenu.find(cat => cat.id === selectedCategory), [currentMenu, selectedCategory]);
 
-  const refreshIfCustomMenu = useCallback(() => {
-    if (activeTab !== "shop" && activeTab !== "restaurant") {
-      dispatch(fetchMenus());
-    }
-  }, [dispatch, activeTab]);
-
   /* ------------------------------------------------------------------ */
   /*  Header actions                                                     */
   /* ------------------------------------------------------------------ */
@@ -102,7 +96,6 @@ const AdminDashboard = () => {
   const handleAddMenu = useCallback(
     async (name: string, color: string) => {
       await dispatch(addMenu({ name, color })).unwrap();
-      dispatch(fetchMenus());
     },
     [dispatch]
   );
@@ -128,7 +121,6 @@ const AdminDashboard = () => {
         })
       ).unwrap();
       setSelectedCategory(result.id);
-      dispatch(fetchMenus());
     },
     [dispatch, activeTab]
   );
@@ -142,7 +134,6 @@ const AdminDashboard = () => {
           menuType: (activeTab === "shop" || activeTab === "restaurant" ? activeTab : "shop") as "shop" | "restaurant"
         })
       ).unwrap();
-      dispatch(fetchMenus());
     },
     [dispatch, activeTab]
   );
@@ -188,10 +179,8 @@ const AdminDashboard = () => {
           coming_soon: itemData.coming_soon
         })
       ).unwrap();
-
-      refreshIfCustomMenu();
     },
-    [dispatch, selectedCategory, refreshIfCustomMenu]
+    [dispatch, selectedCategory]
   );
 
   const handleSaveEdit = useCallback(
@@ -228,10 +217,8 @@ const AdminDashboard = () => {
           }
         })
       ).unwrap();
-
-      refreshIfCustomMenu();
     },
-    [dispatch, originalImageUrl, refreshIfCustomMenu]
+    [dispatch, originalImageUrl]
   );
 
   const handleRequestDeleteItem = useCallback((itemId: string, itemName: string) => {
@@ -252,7 +239,6 @@ const AdminDashboard = () => {
 
         case "menu":
           await dispatch(deleteMenu(deleteTarget.id)).unwrap();
-          dispatch(fetchMenus());
           if (activeTab === deleteTarget.id) {
             setActiveTab("shop");
             setSelectedCategory("");
@@ -266,7 +252,6 @@ const AdminDashboard = () => {
               menuType: (activeTab === "shop" || activeTab === "restaurant" ? activeTab : "shop") as "shop" | "restaurant"
             })
           ).unwrap();
-          dispatch(fetchMenus());
           if (selectedCategory === deleteTarget.id) {
             const remaining = currentMenu.filter(cat => cat.id !== deleteTarget.id);
             setSelectedCategory(remaining.length > 0 ? remaining[0].id : "");
