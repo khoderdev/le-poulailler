@@ -13,7 +13,6 @@ interface ImageUploadProps {
 const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled = false }: ImageUploadProps) => {
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
   const [isDragging, setIsDragging] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
@@ -23,7 +22,6 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
   useEffect(() => {
     if (currentImageUrl) {
       setPreview(currentImageUrl);
-      setImageLoading(true);
       setImageError(false);
     }
   }, [currentImageUrl]);
@@ -54,9 +52,7 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
 
       // Validate file size (hard 512KB limit)
       if (file.size > MAX_UPLOAD_SIZE) {
-        setValidationError(
-          `File is ${formatFileSize(file.size)}. Maximum allowed is ${formatFileSize(MAX_UPLOAD_SIZE)}.`
-        );
+        setValidationError(`File is ${formatFileSize(file.size)}. Maximum allowed is ${formatFileSize(MAX_UPLOAD_SIZE)}.`);
         return;
       }
 
@@ -66,7 +62,6 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
-        setImageLoading(true);
         setImageError(false);
       };
       reader.readAsDataURL(file);
@@ -130,11 +125,6 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
         {preview ? (
           <motion.div key="preview" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative group">
             <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
-              {imageLoading && !imageError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                  <div className="w-8 h-8 border-3 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                </div>
-              )}
               {imageError && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                   <div className="text-center text-gray-500">
@@ -143,31 +133,21 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
                   </div>
                 </div>
               )}
-              <img 
-                src={preview} 
-                alt="Preview" 
-                className={`w-full h-full object-cover transition-opacity duration-300 ${
-                  imageLoading && !imageError ? "opacity-0" : "opacity-100"
-                }`}
-                onLoad={() => setImageLoading(false)}
-                onError={() => {
-                  setImageLoading(false);
-                  setImageError(true);
-                }}
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center">
-                <motion.button initial={{ opacity: 0, scale: 0.8 }} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} onClick={handleRemove} disabled={disabled} className="opacity-0 group-hover:opacity-100 bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" type="button">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center">
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={handleRemove} disabled={disabled} className="opacity-0 group-hover:opacity-100 bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" type="button">
                   <FiX className="w-5 h-5" />
                 </motion.button>
               </div>
             </div>
             <div className="flex items-center justify-between mt-2 px-1">
               <p className="text-xs text-gray-500">Click the X to remove image</p>
-              {fileSize && (
-                <p className="text-xs text-gray-400">
-                  {formatFileSize(fileSize)}
-                </p>
-              )}
+              {fileSize && <p className="text-xs text-gray-400">{formatFileSize(fileSize)}</p>}
             </div>
           </motion.div>
         ) : (
@@ -188,13 +168,7 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
             `}
           >
             <motion.div animate={isDragging ? { scale: 1.1 } : { scale: 1 }} className={`p-4 rounded-full ${validationError ? "bg-red-100" : isDragging ? "bg-blue-100" : "bg-gray-100"}`}>
-              {validationError ? (
-                <FiAlertCircle className="w-8 h-8 text-red-500" />
-              ) : isDragging ? (
-                <FiUpload className="w-8 h-8 text-blue-500" />
-              ) : (
-                <FiImage className="w-8 h-8 text-gray-400" />
-              )}
+              {validationError ? <FiAlertCircle className="w-8 h-8 text-red-500" /> : isDragging ? <FiUpload className="w-8 h-8 text-blue-500" /> : <FiImage className="w-8 h-8 text-gray-400" />}
             </motion.div>
             <div className="text-center px-4">
               <p className="text-sm font-medium text-gray-700">{isDragging ? "Drop image here" : "Click to upload or drag and drop"}</p>
@@ -207,12 +181,7 @@ const ImageUpload = ({ currentImageUrl, onImageChange, onImageRemove, disabled =
       {/* Inline validation error */}
       <AnimatePresence>
         {validationError && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -8, height: 0 }}
-            className="overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} className="overflow-hidden">
             <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
               <FiAlertCircle className="w-4 h-4 text-red-500 shrink-0" />
               <p className="text-xs text-red-600">{validationError}</p>

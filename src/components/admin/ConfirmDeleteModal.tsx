@@ -10,14 +10,7 @@ interface ConfirmDeleteModalProps {
   loading?: boolean;
 }
 
-export default function ConfirmDeleteModal({
-  open,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  loading = false,
-}: ConfirmDeleteModalProps) {
+export default function ConfirmDeleteModal({ open, title, message, onConfirm, onCancel, loading = false }: ConfirmDeleteModalProps) {
   return (
     <Modal
       open={open}

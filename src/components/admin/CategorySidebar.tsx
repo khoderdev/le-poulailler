@@ -14,15 +14,7 @@ interface CategorySidebarProps {
   onDeleteCategory: (id: string, name: string) => void;
 }
 
-export default function CategorySidebar({
-  categories,
-  selectedCategory,
-  activeTab,
-  onSelectCategory,
-  onAddCategory,
-  onEditCategory,
-  onDeleteCategory,
-}: CategorySidebarProps) {
+export default function CategorySidebar({ categories, selectedCategory, activeTab, onSelectCategory, onAddCategory, onEditCategory, onDeleteCategory }: CategorySidebarProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [addStatus, setAddStatus] = useState<SaveStatus>("idle");
@@ -74,11 +66,7 @@ export default function CategorySidebar({
       <div className="bg-white rounded-xl shadow-sm p-4 flex-1 min-h-0 max-h-[25vh] sm:max-h-[35vh] lg:max-h-none overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-800">Categories</h2>
-          <Button
-            variant="primary"
-            size="xs"
-            onClick={() => setIsAdding(!isAdding)}
-          >
+          <Button variant="primary" size="xs" onClick={() => setIsAdding(!isAdding)}>
             + Add
           </Button>
         </div>
@@ -86,29 +74,10 @@ export default function CategorySidebar({
         {/* Add Category Form */}
         <AnimatePresence>
           {isAdding && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-4 p-3 bg-green-50 rounded-lg"
-            >
-              <input
-                type="text"
-                placeholder="Category name"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleAdd()}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2"
-                autoFocus
-              />
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-4 p-3 bg-green-50 rounded-lg">
+              <input type="text" placeholder="Category name" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAdd()} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm mb-2" autoFocus />
               <div className="flex gap-2">
-                <Button
-                  variant="primary"
-                  size="xs"
-                  disabled={addStatus === "saving" || !newName.trim()}
-                  onClick={handleAdd}
-                  className="flex-1"
-                >
+                <Button variant="primary" size="xs" disabled={addStatus === "saving" || !newName.trim()} onClick={handleAdd} className="flex-1">
                   {addStatus === "saving" ? "Saving..." : "Save"}
                 </Button>
                 <Button
@@ -144,40 +113,19 @@ export default function CategorySidebar({
                     autoFocus
                   />
                   <div className="flex gap-1">
-                    <Button
-                      variant="primary"
-                      size="xs"
-                      onClick={saveEdit}
-                      className="flex-1"
-                    >
+                    <Button variant="primary" size="xs" onClick={saveEdit} className="flex-1">
                       Save
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={cancelEdit}
-                      className="flex-1"
-                    >
+                    <Button variant="ghost" size="xs" onClick={cancelEdit} className="flex-1">
                       Cancel
                     </Button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <button
-                    onClick={() => onSelectCategory(category.id)}
-                    className={`w-full text-left px-3 py-2 sm:px-4 sm:py-3 rounded-lg text-sm sm:text-base transition-colors ${
-                      selectedCategory === category.id
-                        ? activeTab === "shop"
-                          ? "bg-[#286091] text-white"
-                          : "bg-[#9c2622] text-white"
-                        : "hover:bg-gray-100 text-gray-700"
-                    }`}
-                  >
+                  <button onClick={() => onSelectCategory(category.id)} className={`w-full text-left px-3 py-2 sm:px-4 sm:py-3 rounded-lg text-sm sm:text-base transition-colors ${selectedCategory === category.id ? (activeTab === "shop" ? "bg-primary text-white" : "bg-secondary text-white") : "hover:bg-gray-100 text-gray-700"}`}>
                     <span className="font-medium">{category.name}</span>
-                    <span className="text-sm opacity-75 ml-2">
-                      ({category.items.length})
-                    </span>
+                    <span className="text-sm opacity-75 ml-2">({category.items.length})</span>
                   </button>
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button
