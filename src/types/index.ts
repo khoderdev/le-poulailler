@@ -5,6 +5,7 @@ export interface MenuItem {
   description?: string;
   imageUrl?: string;
   comingSoon?: boolean;
+  sortOrder: number;
 }
 
 export interface MenuCategory {
@@ -35,7 +36,8 @@ export interface MenuState {
   isLoading: boolean;
 }
 
-export const shopMenuData: MenuCategory[] = [
+// Static seed data (unused at runtime — Supabase is the source of truth)
+export const shopMenuData = [
   {
     id: "fresh-chicken",
     name: "Fresh Chicken",
@@ -87,7 +89,7 @@ export const shopMenuData: MenuCategory[] = [
   },
 ];
 
-export const restaurantMenuData: MenuCategory[] = [
+export const restaurantMenuData = [
   {
     id: "soup",
     name: "Soup",

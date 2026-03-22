@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkSession, logout } from "../store/adminSlice";
-import { fetchMenuData, fetchMenus, addMenu, deleteMenu, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory } from "../store/menuSlice";
+import { fetchMenuData, fetchMenus, addMenu, deleteMenu, updateMenuItem, addMenuItem, deleteMenuItem, addMenuCategory, updateMenuCategory, deleteMenuCategory, reorderMenuItems, reorderItemsOptimistic } from "../store/menuSlice";
 import type { MenuItem } from "../types";
 import { uploadMenuItemImage, deleteMenuItemImage } from "../lib/imageUpload";
 
@@ -226,6 +226,19 @@ const AdminDashboard = () => {
   }, []);
 
   /* ------------------------------------------------------------------ */
+  /*  Reorder items                                                      */
+  /* ------------------------------------------------------------------ */
+  const handleReorderItems = useCallback(
+    (categoryId: string, itemIds: string[]) => {
+      // Optimistic update in Redux store
+      dispatch(reorderItemsOptimistic({ categoryId, itemIds }));
+      // Persist to Supabase
+      dispatch(reorderMenuItems({ categoryId, itemIds }));
+    },
+    [dispatch]
+  );
+
+  /* ------------------------------------------------------------------ */
   /*  Confirm delete handler (shared for item / menu / category)         */
   /* ------------------------------------------------------------------ */
   const handleConfirmDelete = useCallback(async () => {
@@ -301,7 +314,7 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-4 flex-1 min-h-0 lg:grid-rows-[1fr]">
             <CategorySidebar categories={currentMenu} selectedCategory={selectedCategory} activeTab={activeTab} onSelectCategory={setSelectedCategory} onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleRequestDeleteCategory} />
 
-            <ItemsList category={currentCategory} activeTab={activeTab} onAddItem={handleOpenAddItem} onEditItem={handleOpenEditItem} onDeleteItem={handleRequestDeleteItem} />
+            <ItemsList category={currentCategory} activeTab={activeTab} onAddItem={handleOpenAddItem} onEditItem={handleOpenEditItem} onDeleteItem={handleRequestDeleteItem} onReorder={handleReorderItems} />
           </div>
         )}
       </main>

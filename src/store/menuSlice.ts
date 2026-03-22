@@ -11,7 +11,8 @@ const toMenuItem = (item: DbMenuItem): MenuItem => ({
   price: item.price,
   description: item.description || undefined,
   imageUrl: item.image_url || undefined,
-  comingSoon: item.coming_soon
+  comingSoon: item.coming_soon,
+  sortOrder: item.sort_order ?? 0
 });
 
 // Async thunk to fetch menu data from Supabase
@@ -20,7 +21,7 @@ export const fetchMenuData = createAsyncThunk("menu/fetchMenuData", async (_, { 
     // Parallel fetch — categories and items at the same time
     const [catResult, itemResult] = await Promise.all([
       supabase.from("menu_categories").select("*").order("sort_order", { ascending: true }),
-      supabase.from("menu_items").select("*").order("created_at", { ascending: false })
+      supabase.from("menu_items").select("*").order("sort_order", { ascending: true })
     ]);
 
     if (catResult.error) throw catResult.error;
@@ -112,10 +113,18 @@ export const addMenuItem = createAsyncThunk(
       image_url?: string;
       coming_soon?: boolean;
     },
-    { rejectWithValue }
+    { rejectWithValue, getState }
   ) => {
     try {
-      // New items get sort_order 0 to appear at top
+      // Find the max sort_order in this category to place new item at end
+      const state = getState() as { menu: ExtendedMenuState };
+      const allCategories = [...state.menu.shopMenu, ...state.menu.restaurantMenu];
+      for (const menu of state.menu.menus) {
+        allCategories.push(...menu.categories);
+      }
+      const category = allCategories.find(cat => cat.id === item.category_id);
+      const maxSortOrder = category?.items.reduce((max, i) => Math.max(max, i.sortOrder), -1) ?? -1;
+
       const newItem = {
         id: `item-${Date.now()}`,
         category_id: item.category_id,
@@ -124,7 +133,7 @@ export const addMenuItem = createAsyncThunk(
         description: item.description || null,
         image_url: item.image_url || null,
         coming_soon: item.coming_soon || false,
-        sort_order: 0,
+        sort_order: maxSortOrder + 1,
         created_at: new Date().toISOString()
       };
 
@@ -151,6 +160,40 @@ export const deleteMenuItem = createAsyncThunk("menu/deleteMenuItem", async (ite
     return rejectWithValue("Failed to delete menu item");
   }
 });
+
+// Async thunk to reorder menu items (batch update sort_order)
+export const reorderMenuItems = createAsyncThunk(
+  "menu/reorderMenuItems",
+  async (
+    payload: {
+      categoryId: string;
+      itemIds: string[]; // item IDs in their new order
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      // Batch update: fire all sort_order updates in parallel
+      const now = new Date().toISOString();
+      const results = await Promise.all(
+        payload.itemIds.map((id, index) =>
+          supabase
+            .from("menu_items")
+            .update({ sort_order: index, updated_at: now })
+            .eq("id", id)
+        )
+      );
+
+      // Check for any errors
+      const failed = results.find(r => r.error);
+      if (failed?.error) throw failed.error;
+
+      return payload;
+    } catch (error) {
+      console.error("Error reordering menu items:", error);
+      return rejectWithValue("Failed to reorder menu items");
+    }
+  }
+);
 
 // Async thunk to add a menu category
 export const addMenuCategory = createAsyncThunk(
@@ -227,7 +270,7 @@ export const fetchMenus = createAsyncThunk("menu/fetchMenus", async (_, { reject
     const [menuResult, catResult, itemResult] = await Promise.all([
       supabase.from("menus").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
       supabase.from("menu_categories").select("*").order("sort_order", { ascending: true }),
-      supabase.from("menu_items").select("*").order("created_at", { ascending: false })
+      supabase.from("menu_items").select("*").order("sort_order", { ascending: true })
     ]);
 
     if (menuResult.error) throw menuResult.error;
@@ -410,16 +453,36 @@ const menuSlice = createSlice({
     clearError: state => {
       state.error = null;
     },
+    // Optimistic reorder: immediately reorder items in the store
+    reorderItemsOptimistic: (state, action: PayloadAction<{ categoryId: string; itemIds: string[] }>) => {
+      const { categoryId, itemIds } = action.payload;
+      const allMenus = [...state.shopMenu, ...state.restaurantMenu];
+      for (const menu of state.menus) {
+        allMenus.push(...menu.categories);
+      }
+      const category = allMenus.find(cat => cat.id === categoryId);
+      if (!category) return;
+
+      // Build a map for O(1) lookup
+      const itemMap = new Map(category.items.map(item => [item.id, item]));
+      // Reorder based on the new ID order and update sortOrder
+      category.items = itemIds
+        .map((id, index) => {
+          const item = itemMap.get(id);
+          if (item) return { ...item, sortOrder: index };
+          return null;
+        })
+        .filter((item): item is MenuItem => item !== null);
+    },
     // Realtime handlers
     realtimeItemInserted: (state, action: PayloadAction<DbMenuItem>) => {
       const item = action.payload;
       const newItem = toMenuItem(item);
-      // Find category and add item at the beginning (top)
+      // Find category and add item at the end (respecting sort_order)
       for (const category of state.shopMenu) {
         if (category.id === item.category_id) {
-          // Avoid duplicates
           if (!category.items.some(i => i.id === item.id)) {
-            category.items.unshift(newItem);
+            category.items.push(newItem);
           }
           return;
         }
@@ -427,7 +490,7 @@ const menuSlice = createSlice({
       for (const category of state.restaurantMenu) {
         if (category.id === item.category_id) {
           if (!category.items.some(i => i.id === item.id)) {
-            category.items.unshift(newItem);
+            category.items.push(newItem);
           }
           return;
         }
@@ -490,13 +553,13 @@ const menuSlice = createSlice({
           }
         }
       })
-      // Add menu item - insert at beginning so new items appear at top
+      // Add menu item - append at end to respect sort_order
       .addCase(addMenuItem.fulfilled, (state, action) => {
         const item = action.payload;
         const newItem = toMenuItem(item);
         for (const category of [...state.shopMenu, ...state.restaurantMenu]) {
           if (category.id === item.category_id) {
-            category.items.unshift(newItem);
+            category.items.push(newItem);
             return;
           }
         }
@@ -597,7 +660,7 @@ const menuSlice = createSlice({
   }
 });
 
-export const { setActiveShopCategory, setActiveRestaurantCategory, clearError, realtimeItemInserted, realtimeItemUpdated, realtimeItemDeleted } = menuSlice.actions;
+export const { setActiveShopCategory, setActiveRestaurantCategory, clearError, reorderItemsOptimistic, realtimeItemInserted, realtimeItemUpdated, realtimeItemDeleted } = menuSlice.actions;
 export type { MenuState };
 export default menuSlice.reducer;
 
@@ -616,10 +679,16 @@ export const selectMenuError = createSelector(selectMenuState, menu => menu.erro
 
 export const selectShopActiveItems = createSelector(
   [selectShopMenu, selectActiveShopCategory],
-  (shopMenu, activeCategory) => shopMenu.find(cat => cat.id === activeCategory)?.items ?? []
+  (shopMenu, activeCategory) => {
+    const items = shopMenu.find(cat => cat.id === activeCategory)?.items ?? [];
+    return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+  }
 );
 
 export const selectRestaurantActiveItems = createSelector(
   [selectRestaurantMenu, selectActiveRestaurantCategory],
-  (restaurantMenu, activeCategory) => restaurantMenu.find(cat => cat.id === activeCategory)?.items ?? []
+  (restaurantMenu, activeCategory) => {
+    const items = restaurantMenu.find(cat => cat.id === activeCategory)?.items ?? [];
+    return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+  }
 );
