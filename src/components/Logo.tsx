@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import logoWebp from '../assets/le-poulailler-logo.webp';
-import logoPng from '../assets/le-poulailler-logo.png';
+// import logoWebp from '../assets/logo.webp';
+import logoPng from '../assets/logo.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -28,7 +28,7 @@ const Logo = ({ size = 'md', animate = true, className = '' }: LogoProps) => {
   
   const imgElement = (
     <picture>
-      <source srcSet={logoWebp} type="image/webp" />
+      {/* <source srcSet={logoWebp} type="image/webp" /> */}
       <img
         src={logoPng}
         alt="Le Poulailler"

@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useMotionValue, animate as motionAnimate } from "framer-motion";
 import { useState, useEffect, useCallback, memo, useRef } from "react";
 import type { MenuItem } from "../types";
-import { AedSymbol } from "../assets/AEDSymbol";
+
 import { getOptimizedImageUrl, preloadImage } from "../lib/imageUpload";
 
 interface DragInfo {
@@ -130,8 +130,7 @@ const MenuItemCard = memo(({ item, itemVariants, hoverBorder, priceColor }: Menu
               </p>
             )}
             <div className={`flex items-center gap-1 ${priceColor} font-semibold text-sm md:text-base`}>
-              {item.price}
-              <AedSymbol className="h-3 w-auto" />
+              {item.price} $
             </div>
           </div>
 

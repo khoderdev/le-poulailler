@@ -73,7 +73,7 @@ function DraggableItem({
             {item.comingSoon && <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 rounded-full">Coming Soon</span>}
           </div>
           {item.description && <p className="text-gray-500 text-sm mt-1">{item.description}</p>}
-          <p className={`font-semibold mt-1 ${activeTab === "shop" ? "text-[#286091]" : "text-[#9c2622]"}`}>{item.price} AED</p>
+          <p className={`font-semibold mt-1 ${activeTab === "shop" ? "text-[#286091]" : "text-[#9c2622]"}`}>{item.price} $</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <Button variant="ghost" size="xs" icon={<FiEdit2 />} onClick={() => onEditItem(item)} aria-label="Edit" />

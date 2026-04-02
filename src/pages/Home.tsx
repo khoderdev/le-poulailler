@@ -114,9 +114,9 @@ const Home = () => {
           </motion.div>
 
           {/* Tagline */}
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }} className="text-center text-gray-500 text-sm md:text-base mb-10! tracking-wide">
+          {/* <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }} className="text-center text-gray-500 text-sm md:text-base mb-10! tracking-wide">
             ZERO HORMONES
-          </motion.p>
+          </motion.p> */}
 
           {/* Menu Cards */}
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="flex flex-col gap-4 select-none! p-8!">
